@@ -53,4 +53,30 @@ describe("PortalHero", () => {
     expect(scrollBySpy).toHaveBeenCalled();
     scrollBySpy.mockRestore();
   });
+
+  it("เรนเดอร์ภาพพื้นหลังสมาธิ และไม่มีเส้นกรอบบนคอนเทนเนอร์", () => {
+    const { container } = render(<PortalHero />);
+
+    const img = screen.getByAltText("Meditation in nature at sunrise");
+    expect(img).toBeTruthy();
+    expect(img.getAttribute("src")).toBe("/images/hero-meditation.jpg");
+
+    const section = container.querySelector("section");
+    expect(section).toBeTruthy();
+    // ยืนยันว่าไม่มีคลาส border กรอบ
+    expect(section?.className).not.toContain("border-[var(--glass-border)]");
+    expect(section?.className).not.toContain("border ");
+  });
+
+  it("ตอบสนองต่อการขยับและนำเมาส์ชี้ (Mouse Hover & Move)", () => {
+    const { container } = render(<PortalHero />);
+    const section = container.querySelector("section");
+    expect(section).toBeTruthy();
+
+    if (section) {
+      fireEvent.mouseEnter(section);
+      fireEvent.mouseMove(section, { clientX: 150, clientY: 200 });
+      fireEvent.mouseLeave(section);
+    }
+  });
 });

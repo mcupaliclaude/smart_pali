@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { CURRENT_PATH_HEADER } from "@/shared/lib/security/callback-url";
 
-const PUBLIC_PREFIXES = ["/portal", "/reset-password/", "/verify-email/", "/api/auth/", "/_next/", "/favicon.ico", "/uploads/"];
+const PUBLIC_PREFIXES = ["/portal", "/reset-password/", "/verify-email/", "/api/auth/", "/_next/", "/favicon.ico", "/uploads/", "/images/"];
 const GUEST_ONLY = ["/login", "/forgot-password"];
 
 /** ด่านตรวจระดับ route — ไม่แตะ DB (edge) · สิทธิ์ละเอียดตรวจใน Server Action ผ่าน requirePermission */
