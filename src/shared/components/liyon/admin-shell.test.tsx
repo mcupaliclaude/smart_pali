@@ -144,4 +144,15 @@ describe("AdminShell", () => {
     );
     expect(screen.getByText("3")).toBeTruthy();
   });
+
+  it("แสดงรูปภาพโลโก้เมื่อส่ง brandLogoUrl เข้ามา", () => {
+    render(
+      <AdminShell
+        {...baseProps({ brandLogoUrl: "/uploads/logos/logo-test.png", brandName: "Smart Pali" })}
+      />,
+    );
+    const img = screen.getByRole("img", { name: "Smart Pali" });
+    expect(img).toBeTruthy();
+    expect(img.getAttribute("src")).toBe("/uploads/logos/logo-test.png");
+  });
 });

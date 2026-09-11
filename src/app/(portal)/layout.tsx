@@ -2,9 +2,12 @@ import Link from "next/link";
 import { GraduationCap, LogIn, Newspaper, BookOpen, Users, Calendar, Sparkles, Award, Home } from "lucide-react";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { getT } from "@/i18n/server";
+import { resolvePublicTenantId } from "@/shared/lib/tenant";
+import { getTenantSettings } from "@/features/identity/server";
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
-  const t = await getT();
+  const [t, tenantId] = await Promise.all([getT(), resolvePublicTenantId()]);
+  const tenant = tenantId ? await getTenantSettings(tenantId).catch(() => null) : null;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
@@ -12,8 +15,13 @@ export default async function PortalLayout({ children }: { children: React.React
       <header className="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/portal" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-xl group-hover:scale-105 transition-transform">
-              <GraduationCap className="h-6 w-6" />
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-xl group-hover:scale-105 transition-transform overflow-hidden">
+              {tenant?.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={tenant.logoUrl} alt={tenant.nameTh || "Logo"} className="w-full h-full object-contain p-1" />
+              ) : (
+                <GraduationCap className="h-6 w-6" />
+              )}
             </div>
             <div>
               <span className="font-bold text-base sm:text-lg tracking-tight block leading-tight">
@@ -101,7 +109,12 @@ export default async function PortalLayout({ children }: { children: React.React
       <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-10 mt-12 text-sm text-muted-foreground">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <GraduationCap className="h-5 w-5 text-primary" />
+            {tenant?.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={tenant.logoUrl} alt="Logo" className="w-5 h-5 object-contain" />
+            ) : (
+              <GraduationCap className="h-5 w-5 text-primary" />
+            )}
             <span className="font-semibold text-foreground">
               {t("portal.footer.brand")}
             </span>
