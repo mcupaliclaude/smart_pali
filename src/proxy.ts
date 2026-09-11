@@ -21,9 +21,19 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL(loggedIn ? "/dashboard" : "/portal", req.url));
   }
   if (!loggedIn) {
+    // ถ้าเป็น Server Action หรือ RSC payload request: ปล่อยให้ handler จัดการ
+    // เพื่อให้ requireSession ใช้ next/navigation redirect() ที่ส่ง X-Action-Redirect
+    // หรือ x-nextjs-redirect อย่างถูกต้อง ไม่ทำให้ client crash จากการรับ HTML
+    const isRsc = req.headers.has("next-action") || req.headers.has("rsc") || req.headers.get("accept")?.includes("text/x-component");
+    if (isRsc) {
+      const headers = new Headers(req.headers);
+      headers.set(CURRENT_PATH_HEADER, pathname + search);
+      return NextResponse.next({ request: { headers } });
+    }
+
     const login = new URL("/login", req.url);
     login.searchParams.set("callbackUrl", pathname + search);
-    return NextResponse.redirect(login);
+    return NextResponse.redirect(login, 303);
   }
   if (token?.mustChangePassword && pathname !== "/change-password") {
     return NextResponse.redirect(new URL("/change-password", req.url));

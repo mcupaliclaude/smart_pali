@@ -3,5 +3,6 @@ import { SettingsForm } from "./_components/settings-form";
 
 export default async function SettingsPage() {
   const ctx = await requirePermission(P.settingsManage);
-  return <SettingsForm initial={await getTenantSettings(ctx.tenantId)} />;
+  const settings = await getTenantSettings(ctx.tenantId);
+  return <SettingsForm key={`${settings.code}-${settings.logoUrl ?? ""}-${settings.palette}`} initial={settings} />;
 }
