@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { CURRENT_PATH_HEADER } from "@/shared/lib/security/callback-url";
 
-const PUBLIC_PREFIXES = ["/portal", "/reset-password/", "/verify-email/", "/api/auth/", "/_next/", "/favicon.ico", "/uploads/", "/images/"];
+const PUBLIC_PREFIXES = ["/portal", "/reset-password/", "/verify-email/", "/api/auth/", "/api/health", "/_next/", "/favicon.ico", "/uploads/", "/images/"];
 const GUEST_ONLY = ["/login", "/forgot-password"];
 
 /** ด่านตรวจระดับ route — ไม่แตะ DB (edge) · สิทธิ์ละเอียดตรวจใน Server Action ผ่าน requirePermission */
@@ -10,8 +10,16 @@ export async function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
   if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) return NextResponse.next();
 
-  const secureCookie = (process.env.APP_URL ?? "").startsWith("https://");
-  const token = await getToken({ req, secret: process.env.AUTH_SECRET, secureCookie });
+  const hasSecureCookie = req.cookies.has("__Secure-authjs.session-token");
+  const isHttps = (process.env.APP_URL ?? "").startsWith("https://")
+    || req.nextUrl.protocol === "https:"
+    || req.headers.get("x-forwarded-proto") === "https";
+  const secureCookie = hasSecureCookie || isHttps;
+
+  let token = await getToken({ req, secret: process.env.AUTH_SECRET, secureCookie });
+  if (!token) {
+    token = await getToken({ req, secret: process.env.AUTH_SECRET, secureCookie: !secureCookie });
+  }
   const loggedIn = !!token && !token.invalid && !!token.userId;
 
   if (GUEST_ONLY.includes(pathname)) {

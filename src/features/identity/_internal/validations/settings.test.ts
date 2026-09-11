@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { updateSettingsSchema } from "./settings";
+import { updateSettingsSchema, smtpSettingsSchema, testSmtpSchema } from "./settings";
 import { saveUploadedLogo, MAX_LOGO_FILE_SIZE } from "../services/logo-upload.service";
 import fs from "node:fs/promises";
 
@@ -121,4 +121,113 @@ describe("saveUploadedLogo service", () => {
 
     await expect(saveUploadedLogo(mockFile, "tenant-123")).rejects.toThrow();
   });
+
+  it("ยอมรับไฟล์ SVG ที่ปลอดภัย", async () => {
+    vi.spyOn(fs, "mkdir").mockResolvedValue(undefined as never);
+    vi.spyOn(fs, "writeFile").mockResolvedValue(undefined as never);
+
+    const safeSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="40"/></svg>';
+    const mockFile = {
+      name: "safe.svg",
+      size: safeSvg.length,
+      type: "image/svg+xml",
+      arrayBuffer: async () => Buffer.from(safeSvg),
+    };
+
+    const res = await saveUploadedLogo(mockFile, "tenant-123-uuid");
+    expect(res.url).toMatch(/^\/uploads\/logos\/logo-tenant-1-[0-9]+-[a-f0-9]+\.svg$/);
+    vi.restoreAllMocks();
+  });
+
+  it("ปฏิเสธไฟล์ SVG ที่มีสคริปต์หรือโค้ดอันตราย (Stored XSS Prevention)", async () => {
+    const maliciousSvg = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>';
+    const mockFile = {
+      name: "evil.svg",
+      size: maliciousSvg.length,
+      type: "image/svg+xml",
+      arrayBuffer: async () => Buffer.from(maliciousSvg),
+    };
+
+    await expect(saveUploadedLogo(mockFile, "tenant-123")).rejects.toThrow();
+  });
 });
+
+describe("smtpSettingsSchema", () => {
+  it("ยอมรับการปิดใช้งาน SMTP เมื่อฟิลด์ว่างเปล่า", () => {
+    const data = {
+      enabled: false,
+      user: "",
+      pass: "",
+      fromName: "",
+      fromEmail: "",
+    };
+    const parsed = smtpSettingsSchema.safeParse(data);
+    expect(parsed.success).toBe(true);
+  });
+
+  it("ยอมรับการเปิดใช้งาน SMTP เมื่อระบุ Gmail ที่ถูกต้อง", () => {
+    const data = {
+      enabled: true,
+      user: "admin@gmail.com",
+      pass: "abcd efgh ijkl mnop",
+      fromName: "Smart Pali",
+      fromEmail: "admin@gmail.com",
+    };
+    const parsed = smtpSettingsSchema.safeParse(data);
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.user).toBe("admin@gmail.com");
+      expect(parsed.data.enabled).toBe(true);
+    }
+  });
+
+  it("ปฏิเสธการเปิดใช้งาน SMTP หากไม่ได้ระบุอีเมลหรืออีเมลผิดรูปแบบ", () => {
+    const dataNoEmail = {
+      enabled: true,
+      user: "",
+      pass: "somepassword",
+    };
+    expect(smtpSettingsSchema.safeParse(dataNoEmail).success).toBe(false);
+
+    const dataInvalidEmail = {
+      enabled: true,
+      user: "not-an-email",
+      pass: "somepassword",
+    };
+    expect(smtpSettingsSchema.safeParse(dataInvalidEmail).success).toBe(false);
+  });
+
+  it("ปฏิเสธหาก fromEmail ผิดรูปแบบ (ถ้ามีระบุไว้)", () => {
+    const data = {
+      enabled: true,
+      user: "admin@gmail.com",
+      pass: "somepassword",
+      fromEmail: "invalid-email-address",
+    };
+    const parsed = smtpSettingsSchema.safeParse(data);
+    expect(parsed.success).toBe(false);
+  });
+});
+
+describe("testSmtpSchema", () => {
+  it("ยอมรับข้อมูลทดสอบ SMTP ที่ถูกต้อง", () => {
+    const data = {
+      user: "admin@gmail.com",
+      pass: "abcdefghijklmnop",
+      to: "test@example.com",
+      fromName: "Admin",
+    };
+    const parsed = testSmtpSchema.safeParse(data);
+    expect(parsed.success).toBe(true);
+  });
+
+  it("ปฏิเสธหาก to ไม่ใช่อีเมล", () => {
+    const data = {
+      user: "admin@gmail.com",
+      to: "not-an-email",
+    };
+    const parsed = testSmtpSchema.safeParse(data);
+    expect(parsed.success).toBe(false);
+  });
+});
+

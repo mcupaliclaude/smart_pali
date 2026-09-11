@@ -36,6 +36,30 @@ export async function saveUploadedLogo(file: UploadableFile, tenantId: string): 
 
   await fs.mkdir(uploadDir, { recursive: true });
   const buffer = Buffer.from(await file.arrayBuffer());
+
+  // Prevent Stored XSS via malicious SVG content
+  if (file.type === "image/svg+xml") {
+    const text = buffer.toString("utf-8").toLowerCase();
+    const dangerousPatterns = [
+      "<script",
+      "javascript:",
+      "onload=",
+      "onerror=",
+      "onclick=",
+      "onmouseover=",
+      "onfocus=",
+      "<foreignobject",
+      "<iframe",
+      "<embed",
+      "<object",
+    ];
+    if (dangerousPatterns.some((pattern) => text.includes(pattern))) {
+      throw errors.validation("validation", {
+        file: ["SVG contains potentially malicious or executable content."],
+      });
+    }
+  }
+
   await fs.writeFile(path.join(uploadDir, filename), buffer);
 
   return { url: `/uploads/logos/${filename}` };

@@ -33,6 +33,7 @@ async function homeTenantId(userId: string): Promise<string | null> {
 }
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
+  trustHost: true,
   pages: { signIn: "/login" },
   session: { strategy: "jwt", maxAge: 2 * 24 * 60 * 60, updateAge: 24 * 60 * 60 },
   providers: [
@@ -65,18 +66,52 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    /** OAuth: ต้องมีบัญชีอยู่ก่อน (แอดมินสร้าง) ไม่สร้างอัตโนมัติ */
+    /** OAuth: ถ้ามีบัญชีอยู่แล้วจะผูกข้อมูลและใช้สิทธิ์เดิม หากยังไม่มีจะสร้างบัญชี VIEWER อัตโนมัติ */
     async signIn({ user, account }) {
       if (!account || account.provider === "credentials") return true;
       const providerKey: OAuthProviderId = account.provider === "microsoft-entra-id" ? "microsoft" : "google";
       if (!user.email) return "/login?error=NoAccount";
       const existing = await prisma.user.findUnique({ where: { email: user.email.toLowerCase() } });
-      if (!existing || !existing.isActive) return "/login?error=NoAccount";
-      await prisma.user.update({
-        where: { id: existing.id },
-        data: { provider: providerKey, providerId: account.providerAccountId, imageUrl: user.image ?? existing.imageUrl, lastLoginAt: new Date() },
+      if (existing) {
+        if (!existing.isActive) return "/login?error=NoAccount";
+        await prisma.user.update({
+          where: { id: existing.id },
+          data: { provider: providerKey, providerId: account.providerAccountId, imageUrl: user.image ?? existing.imageUrl, lastLoginAt: new Date() },
+        });
+        user.id = existing.id;
+        return true;
+      }
+
+      // ผู้ใช้ใหม่: สร้างบัญชีและผูกกับองค์กรหลัก (Default Tenant) ด้วยบทบาท VIEWER
+      const defaultTenant = await prisma.tenant.findFirst({ where: { isActive: true }, orderBy: { createdAt: "asc" } });
+      if (!defaultTenant) return "/login?error=NoAccount";
+
+      const viewerRole = await prisma.role.findFirst({ where: { tenantId: defaultTenant.id, code: "VIEWER" } });
+      const newUser = await prisma.$transaction(async (tx) => {
+        const u = await tx.user.create({
+          data: {
+            email: user.email!.toLowerCase(),
+            name: user.name || user.email!.split("@")[0],
+            imageUrl: user.image ?? null,
+            provider: providerKey,
+            providerId: account.providerAccountId,
+            emailVerified: true,
+            isActive: true,
+            lastLoginAt: new Date(),
+          },
+        });
+        const ut = await tx.userTenant.create({
+          data: { userId: u.id, tenantId: defaultTenant.id, isActive: true },
+        });
+        if (viewerRole) {
+          await tx.userRole.create({
+            data: { userTenantId: ut.id, roleId: viewerRole.id, scopeType: "ALL" },
+          });
+        }
+        return u;
       });
-      user.id = existing.id;
+
+      user.id = newUser.id;
       return true;
     },
 

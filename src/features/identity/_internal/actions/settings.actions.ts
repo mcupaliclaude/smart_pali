@@ -10,6 +10,9 @@ import { getTenantSettings, updateTenantSettings, type TenantSettings } from "..
 
 import { errors } from "@/shared/lib/errors";
 import { saveUploadedLogo, type UploadableFile } from "../services/logo-upload.service";
+import { testSmtpSchema } from "../validations/settings";
+import { getRawTenantSmtp } from "../services/tenant.service";
+import { testSmtpTransport } from "@/shared/lib/infra/mailer";
 
 export async function getSettingsAction(): Promise<ActionResult<TenantSettings>> {
   return runAction(async () => getTenantSettings((await requirePermission(P.settingsManage)).tenantId));
@@ -32,4 +35,46 @@ export async function uploadLogoAction(formData: FormData): Promise<ActionResult
     return saveUploadedLogo(file as unknown as UploadableFile, ctx.tenantId);
   });
 }
+
+export async function testSmtpAction(input: unknown): Promise<ActionResult<{ success: boolean }>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(P.settingsManage);
+    const locale = await getLocale();
+    const data = testSmtpSchema.parse(input, { error: zodErrorMap(locale) });
+
+    let pass = data.pass?.trim() || "";
+    if (!pass) {
+      const existing = await getRawTenantSmtp(ctx.tenantId);
+      if (existing?.pass) {
+        pass = existing.pass;
+      }
+    }
+
+    if (!pass) {
+      throw errors.validation("validation", {
+        pass: [locale === "th" ? "กรุณาระบุ Google App Password (รหัสผ่านสำหรับแอป 16 หลัก)" : "Google App Password is required"],
+      });
+    }
+
+    const result = await testSmtpTransport(
+      {
+        service: "gmail",
+        user: data.user,
+        pass,
+        fromName: data.fromName,
+        fromEmail: data.fromEmail,
+      },
+      data.to,
+    );
+
+    if (!result.success) {
+      throw errors.validation("validation", {
+        _form: [result.error || (locale === "th" ? "ไม่สามารถเชื่อมต่อ Gmail ได้" : "Failed to connect to Gmail")],
+      });
+    }
+
+    return { success: true };
+  });
+}
+
 
