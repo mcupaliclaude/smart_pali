@@ -54,7 +54,7 @@ describe("PortalHero", () => {
     scrollBySpy.mockRestore();
   });
 
-  it("เรนเดอร์ภาพพื้นหลังสมาธิ และไม่มีเส้นกรอบบนคอนเทนเนอร์", () => {
+  it("เรนเดอร์ภาพพื้นหลังสมาธิ ไม่มีกรอบรูปกล่อง และมีขอบภาพจาง", () => {
     const { container } = render(<PortalHero />);
 
     const img = screen.getByAltText("Meditation in nature at sunrise");
@@ -63,9 +63,18 @@ describe("PortalHero", () => {
 
     const section = container.querySelector("section");
     expect(section).toBeTruthy();
-    // ยืนยันว่าไม่มีคลาส border กรอบ
+    // ยืนยันว่าไม่มีคลาสกรอบ หรือกล่องการ์ด
     expect(section?.className).not.toContain("border-[var(--glass-border)]");
-    expect(section?.className).not.toContain("border ");
+    expect(section?.className).not.toContain("rounded-3xl");
+    expect(section?.className).not.toContain("shadow-2xl");
+
+    // ตรวจสอบว่ารูปภาพอยู่ในคอนเทนเนอร์ที่มี mask-image สำหรับขอบภาพจาง ๆ
+    const imgWrapper = img.closest("div")?.parentElement;
+    expect(imgWrapper?.getAttribute("style")).toContain("radial-gradient");
+
+    // ตรวจสอบว่าข้อความจัดวางแยกด้านซ้าย (items-start text-left)
+    const textContainer = container.querySelector(".text-left");
+    expect(textContainer).toBeTruthy();
   });
 
   it("ตอบสนองต่อการขยับและนำเมาส์ชี้ (Mouse Hover & Move)", () => {
