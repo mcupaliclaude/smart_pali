@@ -8,6 +8,9 @@ import { requirePermission } from "../rbac";
 import { updateSettingsSchema } from "../validations/settings";
 import { getTenantSettings, updateTenantSettings, type TenantSettings } from "../services/tenant.service";
 
+import { errors } from "@/shared/lib/errors";
+import { saveUploadedLogo, type UploadableFile } from "../services/logo-upload.service";
+
 export async function getSettingsAction(): Promise<ActionResult<TenantSettings>> {
   return runAction(async () => getTenantSettings((await requirePermission(P.settingsManage)).tenantId));
 }
@@ -18,3 +21,15 @@ export async function updateSettingsAction(input: unknown): Promise<ActionResult
     revalidatePath("/", "layout"); // data-palette บน <html> อ่านใหม่
   });
 }
+
+export async function uploadLogoAction(formData: FormData): Promise<ActionResult<{ url: string }>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(P.settingsManage);
+    const file = formData.get("file");
+    if (!file || typeof file === "string" || typeof (file as Blob).arrayBuffer !== "function") {
+      throw errors.validation("validation", { file: ["File is required"] });
+    }
+    return saveUploadedLogo(file as unknown as UploadableFile, ctx.tenantId);
+  });
+}
+
