@@ -15,7 +15,7 @@ let mockSession = {
   isAuthenticated: false,
   isLoading: false,
   update: vi.fn(),
-  tenantId: null,
+  tenantId: null as string | null,
   mustChangePassword: false,
 };
 
