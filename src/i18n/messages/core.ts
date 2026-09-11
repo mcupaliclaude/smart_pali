@@ -99,4 +99,9 @@ export const MESSAGES: Dictionary = {
   "home.contact.address": { th: "อาคารเรียนรวม คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย อ.วังน้อย จ.พระนครศรีอยุธยา", en: "Faculty of Buddhism, Mahachulalongkornrajavidyalaya University, Wang Noi, Ayutthaya" },
   "home.contact.hours": { th: "วันจันทร์ - ศุกร์: 08:30 - 16:30 น.", en: "Mon - Fri: 08:30 - 16:30" },
   "portal.footer.brand": { th: "เว็บไซต์คณะและระบบสารสนเทศ", en: "Faculty Academic Portal" },
+  "portal.footer.quickLinks": { th: "เมนูลัด", en: "Quick Links" },
+  "portal.footer.services": { th: "บริการดิจิทัล", en: "Digital Services" },
+  "portal.footer.contact": { th: "ติดต่อคณะ", en: "Contact Us" },
+  "portal.footer.rights": { th: "สงวนลิขสิทธิ์ทุกประการ", en: "All rights reserved." },
+  "portal.footer.operational": { th: "ระบบเปิดให้บริการตามปกติ", en: "All Systems Operational" },
 };
