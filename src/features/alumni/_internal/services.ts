@@ -1,5 +1,7 @@
 import { prisma } from "@/shared/lib/infra/prisma";
 import type { Prisma } from "@/generated/prisma";
+import { errors } from "@/shared/lib/errors";
+import { writeAudit } from "@/shared/lib/audit";
 import type {
   CreateAlumniMemberInput,
   UpdateAlumniMemberInput,
@@ -260,8 +262,17 @@ export async function updateAlumniMember(
 
 export async function verifyAlumniMember(
   tenantId: string,
-  input: VerifyAlumniMemberInput
+  input: VerifyAlumniMemberInput,
+  actorId?: string | null
 ): Promise<AlumniMemberDto> {
+  const existing = await prisma.alumniMember.findFirst({
+    where: { id: input.id, tenantId },
+  });
+
+  if (!existing) {
+    throw errors.not_found("alumni.memberNotFound");
+  }
+
   const data: Prisma.AlumniMemberUpdateInput = {
     status: input.status,
   };
@@ -274,8 +285,18 @@ export async function verifyAlumniMember(
   }
 
   const row = await prisma.alumniMember.update({
-    where: { id: input.id },
+    where: { id: input.id, tenantId },
     data,
+  });
+
+  await writeAudit({
+    tenantId,
+    actorId: actorId ?? null,
+    action: `alumni.verify_${input.status.toLowerCase()}`,
+    entity: "alumni_member",
+    entityId: row.id,
+    before: { status: existing.status, isSpotlight: existing.isSpotlight },
+    after: { status: row.status, isSpotlight: row.isSpotlight },
   });
 
   return toMemberDto(row);
@@ -283,11 +304,30 @@ export async function verifyAlumniMember(
 
 export async function deleteAlumniMember(
   tenantId: string,
-  id: string
+  id: string,
+  actorId?: string | null
 ): Promise<boolean> {
-  await prisma.alumniMember.delete({
-    where: { id },
+  const existing = await prisma.alumniMember.findFirst({
+    where: { id, tenantId },
   });
+
+  if (!existing) {
+    throw errors.not_found("alumni.memberNotFound");
+  }
+
+  await prisma.alumniMember.delete({
+    where: { id, tenantId },
+  });
+
+  await writeAudit({
+    tenantId,
+    actorId: actorId ?? null,
+    action: "alumni.delete",
+    entity: "alumni_member",
+    entityId: id,
+    before: { fullNameTh: existing.fullNameTh, email: existing.email },
+  });
+
   return true;
 }
 

@@ -1,10 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/shared/lib/infra/prisma";
 import { runAction, type ActionResult } from "@/shared/lib/result";
 import { getLocale } from "@/shared/lib/i18n/server";
 import { zodErrorMap } from "@/shared/lib/i18n/zod-locale";
+import { resolvePublicTenantId } from "@/shared/lib/tenant";
 import { requirePermission, getSessionContext } from "@/features/identity/server";
 import { ALUMNI_P } from "../permissions";
 import {
@@ -31,16 +31,7 @@ export async function createAlumniMemberAction(
 ): Promise<ActionResult<AlumniMemberDto>> {
   return runAction(async () => {
     const session = await getSessionContext();
-    let tenantId = session?.tenantId;
-
-    if (!tenantId) {
-      const defaultTenant = await prisma.tenant.findFirst({
-        where: { isActive: true },
-        select: { id: true },
-      });
-      if (!defaultTenant) throw new Error("No active tenant found");
-      tenantId = defaultTenant.id;
-    }
+    const tenantId = await resolvePublicTenantId(session?.tenantId);
 
     const parsed = createAlumniMemberSchema.parse(input, {
       error: zodErrorMap(await getLocale()),
@@ -76,7 +67,7 @@ export async function verifyAlumniMemberAction(
     const parsed = verifyAlumniMemberSchema.parse(input, {
       error: zodErrorMap(await getLocale()),
     });
-    const result = await verifyAlumniMember(ctx.tenantId, parsed);
+    const result = await verifyAlumniMember(ctx.tenantId, parsed, ctx.userId);
     revalidatePath("/alumni");
     revalidatePath("/portal/alumni");
     return result;
@@ -88,7 +79,7 @@ export async function deleteAlumniMemberAction(
 ): Promise<ActionResult<void>> {
   return runAction(async () => {
     const ctx = await requirePermission(ALUMNI_P.alumniManage);
-    await deleteAlumniMember(ctx.tenantId, id);
+    await deleteAlumniMember(ctx.tenantId, id, ctx.userId);
     revalidatePath("/alumni");
     revalidatePath("/portal/alumni");
   });

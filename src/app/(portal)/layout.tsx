@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { GraduationCap, LogIn, Newspaper, BookOpen, Users, Calendar, Sparkles, Award } from "lucide-react";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
-import { getLocale } from "@/shared/lib/i18n/server";
+import { getT } from "@/i18n/server";
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
-  const locale = await getLocale();
+  const t = await getT();
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
@@ -17,10 +17,10 @@ export default async function PortalLayout({ children }: { children: React.React
             </div>
             <div>
               <span className="font-bold text-base sm:text-lg tracking-tight block leading-tight">
-                {locale === "en" ? "Faculty Platform" : "แพลตฟอร์มคณะวิชาการ"}
+                {t("portal.brand.title")}
               </span>
               <span className="text-xs text-muted-foreground block">
-                {locale === "en" ? "Academic & Research Portal" : "ศูนย์ข่าวสารและบริการการศึกษา"}
+                {t("portal.brand.subtitle")}
               </span>
             </div>
           </Link>
@@ -32,42 +32,42 @@ export default async function PortalLayout({ children }: { children: React.React
               className="px-3 py-1.5 rounded-lg text-primary bg-primary/5 hover:bg-primary/10 transition-colors flex items-center gap-1.5"
             >
               <Newspaper className="h-4 w-4" />
-              {locale === "en" ? "News & PR" : "ข่าวประชาสัมพันธ์"}
+              {t("portal.nav.news")}
             </Link>
             <Link
               href="/portal/curriculum"
               className="px-3 py-1.5 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 text-xs font-medium"
             >
               <BookOpen className="h-3.5 w-3.5" />
-              {locale === "en" ? "Programs" : "หลักสูตร"}
+              {t("portal.nav.curriculum")}
             </Link>
             <Link
               href="/portal/staff"
               className="px-3 py-1.5 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 text-xs font-medium"
             >
               <Users className="h-3.5 w-3.5" />
-              {locale === "en" ? "Faculty" : "บุคลากร"}
+              {t("portal.nav.staff")}
             </Link>
             <Link
               href="/portal/reservations"
               className="px-3 py-1.5 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 text-xs font-medium"
             >
               <Calendar className="h-3.5 w-3.5" />
-              {locale === "en" ? "Reservations" : "จองห้องและยานพาหนะ"}
+              {t("portal.nav.reservations")}
             </Link>
             <Link
               href="/portal/meditation"
               className="px-3 py-1.5 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 text-xs font-medium"
             >
               <Sparkles className="h-3.5 w-3.5" />
-              {locale === "en" ? "Meditation" : "วิปัสสนาธุระ"}
+              {t("portal.nav.meditation")}
             </Link>
             <Link
               href="/portal/alumni"
               className="px-3 py-1.5 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 text-xs font-medium"
             >
               <Award className="h-3.5 w-3.5" />
-              {locale === "en" ? "Alumni" : "ศิษย์เก่า"}
+              {t("portal.nav.alumni")}
             </Link>
           </nav>
 
@@ -79,7 +79,7 @@ export default async function PortalLayout({ children }: { children: React.React
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 hover:opacity-90 transition-opacity"
             >
               <LogIn className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{locale === "en" ? "Admin Console" : "ระบบหลังบ้าน"}</span>
+              <span className="hidden sm:inline">{t("portal.nav.adminConsole")}</span>
             </Link>
           </div>
         </div>
@@ -96,7 +96,7 @@ export default async function PortalLayout({ children }: { children: React.React
           <div className="flex items-center gap-2">
             <GraduationCap className="h-5 w-5 text-primary" />
             <span className="font-semibold text-foreground">
-              {locale === "en" ? "Faculty Academic Portal" : "เว็บไซต์คณะและระบบสารสนเทศ"}
+              {t("portal.footer.brand")}
             </span>
           </div>
           <p className="text-xs">

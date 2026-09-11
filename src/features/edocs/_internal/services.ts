@@ -1,5 +1,7 @@
 import { prisma } from "@/shared/lib/infra/prisma";
 import type { Prisma } from "@/generated/prisma";
+import { errors } from "@/shared/lib/errors";
+import { writeAudit } from "@/shared/lib/audit";
 import type { CreateEDocumentInput, DecideStepInput } from "./validations";
 
 export interface EDocumentApprovalStepDto {
@@ -287,26 +289,16 @@ export async function decideApprovalStep(
   });
 
   if (!step) {
-    throw new Error("Approval step not found");
+    throw errors.not_found("edocs.stepNotFound");
   }
 
   if (step.approverId !== userId) {
-    throw new Error("You are not authorized to decide this step");
+    throw errors.forbidden("edocs.unauthorizedStep");
   }
 
   if (step.decision !== "PENDING") {
-    throw new Error("This step has already been decided");
+    throw errors.conflict("edocs.stepAlreadyDecided");
   }
-
-  // Update this step
-  await prisma.eDocumentApprovalStep.update({
-    where: { id: step.id },
-    data: {
-      decision: input.decision,
-      comment: input.comment ?? null,
-      decidedAt: new Date(),
-    },
-  });
 
   // Calculate new document status
   let newStatus: "SUBMITTED" | "IN_REVIEW" | "APPROVED" | "REJECTED" = "IN_REVIEW";
@@ -323,17 +315,41 @@ export async function decideApprovalStep(
     }
   }
 
-  const updatedDoc = await prisma.eDocument.update({
-    where: { id: step.documentId },
-    data: { status: newStatus },
-    include: {
-      submitter: true,
-      department: true,
-      approvalSteps: {
-        include: { approver: true },
-        orderBy: { stepOrder: "asc" },
+  // Execute in an atomic transaction
+  const updatedDoc = await prisma.$transaction(async (tx) => {
+    await tx.eDocumentApprovalStep.update({
+      where: { id: step.id, tenantId },
+      data: {
+        decision: input.decision,
+        comment: input.comment ?? null,
+        decidedAt: new Date(),
       },
-    },
+    });
+
+    const doc = await tx.eDocument.update({
+      where: { id: step.documentId, tenantId },
+      data: { status: newStatus },
+      include: {
+        submitter: true,
+        department: true,
+        approvalSteps: {
+          include: { approver: true },
+          orderBy: { stepOrder: "asc" },
+        },
+      },
+    });
+
+    await writeAudit({
+      tenantId,
+      actorId: userId,
+      action: `edoc.step_${input.decision.toLowerCase()}`,
+      entity: "edocument_approval_step",
+      entityId: step.id,
+      before: { decision: step.decision },
+      after: { decision: input.decision, comment: input.comment, documentStatus: newStatus },
+    }, tx);
+
+    return doc;
   });
 
   return toDocDto(updatedDoc);
@@ -348,13 +364,25 @@ export async function cancelEDocument(
     where: { tenantId, id: docId },
   });
 
-  if (!doc) throw new Error("Document not found");
-  if (doc.submitterId !== userId) throw new Error("Only submitter can cancel this document");
-  if (doc.status === "APPROVED") throw new Error("Approved documents cannot be cancelled");
+  if (!doc) throw errors.not_found("edocs.docNotFound");
+  if (doc.submitterId !== userId) throw errors.forbidden("edocs.unauthorizedCancel");
+  if (doc.status === "APPROVED") throw errors.conflict("edocs.cannotCancelApproved");
 
-  await prisma.eDocument.update({
-    where: { id: docId },
-    data: { status: "CANCELLED" },
+  await prisma.$transaction(async (tx) => {
+    await tx.eDocument.update({
+      where: { id: docId, tenantId },
+      data: { status: "CANCELLED" },
+    });
+
+    await writeAudit({
+      tenantId,
+      actorId: userId,
+      action: "edoc.cancel",
+      entity: "edocument",
+      entityId: docId,
+      before: { status: doc.status },
+      after: { status: "CANCELLED" },
+    }, tx);
   });
 
   return true;

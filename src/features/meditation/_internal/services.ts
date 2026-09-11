@@ -1,5 +1,7 @@
 import { prisma } from "@/shared/lib/infra/prisma";
 import type { Prisma } from "@/generated/prisma";
+import { errors } from "@/shared/lib/errors";
+import { writeAudit } from "@/shared/lib/audit";
 import type {
   CreateMeditationCourseInput,
   UpdateMeditationCourseInput,
@@ -400,8 +402,16 @@ export async function reviewMeditationRegistration(
   reviewerId: string,
   input: ReviewMeditationRegistrationInput
 ): Promise<MeditationRegistrationDto> {
+  const existing = await prisma.meditationRegistration.findFirst({
+    where: { id: input.registrationId, tenantId },
+  });
+
+  if (!existing) {
+    throw errors.not_found("meditation.registrationNotFound");
+  }
+
   const row = await prisma.meditationRegistration.update({
-    where: { id: input.registrationId },
+    where: { id: input.registrationId, tenantId },
     data: {
       status: input.status,
       roomAssigned: input.roomAssigned ?? null,
@@ -412,6 +422,16 @@ export async function reviewMeditationRegistration(
     include: { course: true, reviewedBy: true },
   });
 
+  await writeAudit({
+    tenantId,
+    actorId: reviewerId,
+    action: `meditation.${input.status.toLowerCase()}`,
+    entity: "meditation_registration",
+    entityId: row.id,
+    before: { status: existing.status, roomAssigned: existing.roomAssigned },
+    after: { status: row.status, roomAssigned: row.roomAssigned, reviewNote: row.reviewNote },
+  });
+
   return toRegistrationDto(row);
 }
 
@@ -419,9 +439,28 @@ export async function cancelMeditationRegistration(
   tenantId: string,
   registrationId: string
 ): Promise<boolean> {
+  const existing = await prisma.meditationRegistration.findFirst({
+    where: { id: registrationId, tenantId },
+  });
+
+  if (!existing) {
+    throw errors.not_found("meditation.registrationNotFound");
+  }
+
   await prisma.meditationRegistration.update({
-    where: { id: registrationId },
+    where: { id: registrationId, tenantId },
     data: { status: "CANCELLED" },
   });
+
+  await writeAudit({
+    tenantId,
+    actorId: null,
+    action: "meditation.cancel",
+    entity: "meditation_registration",
+    entityId: registrationId,
+    before: { status: existing.status },
+    after: { status: "CANCELLED" },
+  });
+
   return true;
 }

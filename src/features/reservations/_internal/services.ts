@@ -1,5 +1,7 @@
 import { prisma } from "@/shared/lib/infra/prisma";
 import type { Prisma } from "@/generated/prisma";
+import { errors } from "@/shared/lib/errors";
+import { writeAudit } from "@/shared/lib/audit";
 import type {
   CreateResourceInput,
   UpdateResourceInput,
@@ -322,7 +324,7 @@ export async function createReservation(
   });
 
   if (conflict) {
-    throw new Error("reservations.conflictError");
+    throw errors.conflict("reservations.conflictError");
   }
 
   // Running number RES-2570/xxxx
@@ -360,8 +362,16 @@ export async function reviewReservation(
   reviewerId: string,
   input: ReviewReservationInput
 ): Promise<ResourceReservationDto> {
+  const existing = await prisma.resourceReservation.findFirst({
+    where: { id: input.reservationId, tenantId },
+  });
+
+  if (!existing) {
+    throw errors.not_found("reservations.notFound");
+  }
+
   const updated = await prisma.resourceReservation.update({
-    where: { id: input.reservationId },
+    where: { id: input.reservationId, tenantId },
     data: {
       status: input.status,
       driverName: input.driverName ?? null,
@@ -370,6 +380,16 @@ export async function reviewReservation(
       reviewedAt: new Date(),
     },
     include: { resource: true, reviewedBy: true },
+  });
+
+  await writeAudit({
+    tenantId,
+    actorId: reviewerId,
+    action: `reservation.${input.status.toLowerCase()}`,
+    entity: "resource_reservation",
+    entityId: updated.id,
+    before: { status: existing.status },
+    after: { status: updated.status, reviewNote: updated.reviewNote },
   });
 
   return toReservationDto(updated);
@@ -384,14 +404,24 @@ export async function cancelReservation(
     where: { id: reservationId, tenantId },
   });
 
-  if (!booking) throw new Error("Reservation not found");
+  if (!booking) throw errors.not_found("reservations.notFound");
   if (userId && booking.userId && booking.userId !== userId) {
-    throw new Error("Unauthorized to cancel this booking");
+    throw errors.forbidden("reservations.unauthorized");
   }
 
   await prisma.resourceReservation.update({
-    where: { id: reservationId },
+    where: { id: reservationId, tenantId },
     data: { status: "CANCELLED" },
+  });
+
+  await writeAudit({
+    tenantId,
+    actorId: userId ?? null,
+    action: "reservation.cancel",
+    entity: "resource_reservation",
+    entityId: booking.id,
+    before: { status: booking.status },
+    after: { status: "CANCELLED" },
   });
 
   return true;

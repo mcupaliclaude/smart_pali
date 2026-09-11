@@ -1,5 +1,7 @@
 import { prisma } from "@/shared/lib/infra/prisma";
 import type { Prisma } from "@/generated/prisma";
+import { errors } from "@/shared/lib/errors";
+import { writeAudit } from "@/shared/lib/audit";
 import type { CreateNewsArticleInput, UpdateNewsArticleInput } from "./validations";
 
 export interface NewsCategoryDto {
@@ -34,6 +36,34 @@ export interface NewsArticleDto {
   updatedAt: string;
 }
 
+type ArticleWithCategory = Prisma.NewsArticleGetPayload<{ include: { category: true } }>;
+
+function toArticleDto(a: ArticleWithCategory): NewsArticleDto {
+  return {
+    id: a.id,
+    tenantId: a.tenantId,
+    titleTh: a.titleTh,
+    titleEn: a.titleEn,
+    slug: a.slug,
+    categoryId: a.categoryId,
+    categoryNameTh: a.category.nameTh,
+    categoryNameEn: a.category.nameEn,
+    categoryCode: a.category.code,
+    excerptTh: a.excerptTh,
+    excerptEn: a.excerptEn,
+    contentTh: a.contentTh,
+    contentEn: a.contentEn,
+    coverImageUrl: a.coverImageUrl,
+    viewCount: a.viewCount,
+    isPinned: a.isPinned,
+    isFeatured: a.isFeatured,
+    status: a.status as "DRAFT" | "PUBLISHED" | "ARCHIVED",
+    publishedAt: a.publishedAt ? a.publishedAt.toISOString() : null,
+    createdAt: a.createdAt.toISOString(),
+    updatedAt: a.updatedAt.toISOString(),
+  };
+}
+
 export async function listNewsCategories(tenantId: string): Promise<NewsCategoryDto[]> {
   const categories = await prisma.newsCategory.findMany({
     where: { tenantId, isActive: true },
@@ -58,29 +88,7 @@ export async function listAdminNews(tenantId: string): Promise<NewsArticleDto[]>
     ],
   });
 
-  return articles.map((a) => ({
-    id: a.id,
-    tenantId: a.tenantId,
-    titleTh: a.titleTh,
-    titleEn: a.titleEn,
-    slug: a.slug,
-    categoryId: a.categoryId,
-    categoryNameTh: a.category.nameTh,
-    categoryNameEn: a.category.nameEn,
-    categoryCode: a.category.code,
-    excerptTh: a.excerptTh,
-    excerptEn: a.excerptEn,
-    contentTh: a.contentTh,
-    contentEn: a.contentEn,
-    coverImageUrl: a.coverImageUrl,
-    viewCount: a.viewCount,
-    isPinned: a.isPinned,
-    isFeatured: a.isFeatured,
-    status: a.status as "DRAFT" | "PUBLISHED" | "ARCHIVED",
-    publishedAt: a.publishedAt ? a.publishedAt.toISOString() : null,
-    createdAt: a.createdAt.toISOString(),
-    updatedAt: a.updatedAt.toISOString(),
-  }));
+  return articles.map(toArticleDto);
 }
 
 export async function listPublishedNews(
@@ -126,32 +134,14 @@ export async function listPublishedNews(
     take: options?.limit ?? 30,
   });
 
-  return articles.map((a) => ({
-    id: a.id,
-    tenantId: a.tenantId,
-    titleTh: a.titleTh,
-    titleEn: a.titleEn,
-    slug: a.slug,
-    categoryId: a.categoryId,
-    categoryNameTh: a.category.nameTh,
-    categoryNameEn: a.category.nameEn,
-    categoryCode: a.category.code,
-    excerptTh: a.excerptTh,
-    excerptEn: a.excerptEn,
-    contentTh: a.contentTh,
-    contentEn: a.contentEn,
-    coverImageUrl: a.coverImageUrl,
-    viewCount: a.viewCount,
-    isPinned: a.isPinned,
-    isFeatured: a.isFeatured,
-    status: a.status as "DRAFT" | "PUBLISHED" | "ARCHIVED",
-    publishedAt: a.publishedAt ? a.publishedAt.toISOString() : null,
-    createdAt: a.createdAt.toISOString(),
-    updatedAt: a.updatedAt.toISOString(),
-  }));
+  return articles.map(toArticleDto);
 }
 
-export async function getNewsBySlug(tenantId: string, slug: string, incrementView = false): Promise<NewsArticleDto | null> {
+export async function getNewsBySlug(
+  tenantId: string,
+  slug: string,
+  incrementView = false
+): Promise<NewsArticleDto | null> {
   const article = await prisma.newsArticle.findFirst({
     where: { tenantId, slug, status: "PUBLISHED" },
     include: { category: true },
@@ -161,34 +151,13 @@ export async function getNewsBySlug(tenantId: string, slug: string, incrementVie
 
   if (incrementView) {
     await prisma.newsArticle.update({
-      where: { id: article.id },
+      where: { id: article.id, tenantId },
       data: { viewCount: { increment: 1 } },
     });
+    article.viewCount += 1;
   }
 
-  return {
-    id: article.id,
-    tenantId: article.tenantId,
-    titleTh: article.titleTh,
-    titleEn: article.titleEn,
-    slug: article.slug,
-    categoryId: article.categoryId,
-    categoryNameTh: article.category.nameTh,
-    categoryNameEn: article.category.nameEn,
-    categoryCode: article.category.code,
-    excerptTh: article.excerptTh,
-    excerptEn: article.excerptEn,
-    contentTh: article.contentTh,
-    contentEn: article.contentEn,
-    coverImageUrl: article.coverImageUrl,
-    viewCount: article.viewCount + (incrementView ? 1 : 0),
-    isPinned: article.isPinned,
-    isFeatured: article.isFeatured,
-    status: article.status as "DRAFT" | "PUBLISHED" | "ARCHIVED",
-    publishedAt: article.publishedAt ? article.publishedAt.toISOString() : null,
-    createdAt: article.createdAt.toISOString(),
-    updatedAt: article.updatedAt.toISOString(),
-  };
+  return toArticleDto(article);
 }
 
 export async function createNewsArticle(
@@ -221,29 +190,7 @@ export async function createNewsArticle(
     include: { category: true },
   });
 
-  return {
-    id: created.id,
-    tenantId: created.tenantId,
-    titleTh: created.titleTh,
-    titleEn: created.titleEn,
-    slug: created.slug,
-    categoryId: created.categoryId,
-    categoryNameTh: created.category.nameTh,
-    categoryNameEn: created.category.nameEn,
-    categoryCode: created.category.code,
-    excerptTh: created.excerptTh,
-    excerptEn: created.excerptEn,
-    contentTh: created.contentTh,
-    contentEn: created.contentEn,
-    coverImageUrl: created.coverImageUrl,
-    viewCount: created.viewCount,
-    isPinned: created.isPinned,
-    isFeatured: created.isFeatured,
-    status: created.status as "DRAFT" | "PUBLISHED" | "ARCHIVED",
-    publishedAt: created.publishedAt ? created.publishedAt.toISOString() : null,
-    createdAt: created.createdAt.toISOString(),
-    updatedAt: created.updatedAt.toISOString(),
-  };
+  return toArticleDto(created);
 }
 
 export async function updateNewsArticle(
@@ -274,34 +221,33 @@ export async function updateNewsArticle(
     include: { category: true },
   });
 
-  return {
-    id: updated.id,
-    tenantId: updated.tenantId,
-    titleTh: updated.titleTh,
-    titleEn: updated.titleEn,
-    slug: updated.slug,
-    categoryId: updated.categoryId,
-    categoryNameTh: updated.category.nameTh,
-    categoryNameEn: updated.category.nameEn,
-    categoryCode: updated.category.code,
-    excerptTh: updated.excerptTh,
-    excerptEn: updated.excerptEn,
-    contentTh: updated.contentTh,
-    contentEn: updated.contentEn,
-    coverImageUrl: updated.coverImageUrl,
-    viewCount: updated.viewCount,
-    isPinned: updated.isPinned,
-    isFeatured: updated.isFeatured,
-    status: updated.status as "DRAFT" | "PUBLISHED" | "ARCHIVED",
-    publishedAt: updated.publishedAt ? updated.publishedAt.toISOString() : null,
-    createdAt: updated.createdAt.toISOString(),
-    updatedAt: updated.updatedAt.toISOString(),
-  };
+  return toArticleDto(updated);
 }
 
-export async function deleteNewsArticle(tenantId: string, id: string): Promise<void> {
+export async function deleteNewsArticle(
+  tenantId: string,
+  id: string,
+  actorId?: string | null
+): Promise<void> {
+  const existing = await prisma.newsArticle.findFirst({
+    where: { id, tenantId },
+  });
+
+  if (!existing) {
+    throw errors.not_found("news.notFound");
+  }
+
   await prisma.newsArticle.delete({
     where: { id, tenantId },
+  });
+
+  await writeAudit({
+    tenantId,
+    actorId: actorId ?? null,
+    action: "news.delete",
+    entity: "news_article",
+    entityId: id,
+    before: { titleTh: existing.titleTh, slug: existing.slug },
   });
 }
 

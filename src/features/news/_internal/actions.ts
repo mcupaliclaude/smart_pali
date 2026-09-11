@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 import { runAction, type ActionResult } from "@/shared/lib/result";
@@ -40,7 +40,7 @@ export async function updateNewsAction(input: unknown): Promise<ActionResult<New
 export async function deleteNewsAction(id: string): Promise<ActionResult<void>> {
   return runAction(async () => {
     const ctx = await requirePermission(NEWS_P.newsManage);
-    await deleteNewsArticle(ctx.tenantId, id);
+    await deleteNewsArticle(ctx.tenantId, id, ctx.userId);
     revalidatePath("/news");
     revalidatePath("/(admin)/news");
   });

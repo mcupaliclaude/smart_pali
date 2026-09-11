@@ -2,17 +2,32 @@ import { describe, it, expect } from "vitest";
 import { UI_MESSAGES } from "./index";
 import { MESSAGES as core } from "./messages/core";
 import { MESSAGES as identity } from "@/features/identity/messages";
+import { MESSAGES as sample } from "@/features/sample/messages";
+import { MESSAGES as news } from "@/features/news/messages";
+import { MESSAGES as staff } from "@/features/staff/messages";
+import { MESSAGES as curriculum } from "@/features/curriculum/messages";
+import { MESSAGES as edocs } from "@/features/edocs/messages";
+import { MESSAGES as reservations } from "@/features/reservations/messages";
+import { MESSAGES as meditation } from "@/features/meditation/messages";
+import { MESSAGES as alumni } from "@/features/alumni/messages";
 import { ALL_PERMISSIONS } from "@/permissions";
 import { LOCALES } from "@/shared/lib/i18n/config";
 import type { Dictionary } from "@/shared/lib/i18n/translate";
 
 /**
  * feature ใหม่เพิ่มพจนานุกรมของตัวเองที่นี่บรรทัดเดียว — เทสต์ทุกตัวด้านล่างวนจากรายการนี้
- * (เดิมเทียบสองพจนานุกรมแบบตายตัว ต้องเพิ่มเทสต์ใหม่ทุกครั้งที่มี feature เพิ่ม)
  */
 const DICTIONARIES: { name: string; messages: Dictionary }[] = [
   { name: "core", messages: core },
   { name: "identity", messages: identity },
+  { name: "sample", messages: sample },
+  { name: "news", messages: news },
+  { name: "staff", messages: staff },
+  { name: "curriculum", messages: curriculum },
+  { name: "edocs", messages: edocs },
+  { name: "reservations", messages: reservations },
+  { name: "meditation", messages: meditation },
+  { name: "alumni", messages: alumni },
 ];
 
 describe("UI_MESSAGES", () => {
