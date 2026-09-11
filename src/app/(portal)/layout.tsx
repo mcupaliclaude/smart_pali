@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GraduationCap, LogIn, Newspaper, BookOpen, Users, Calendar, Sparkles, Award } from "lucide-react";
+import { GraduationCap, LogIn, Newspaper, BookOpen, Users, Calendar, Sparkles, Award, Home } from "lucide-react";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { getT } from "@/i18n/server";
 
@@ -11,7 +11,7 @@ export default async function PortalLayout({ children }: { children: React.React
       {/* Top Banner */}
       <header className="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/portal/news" className="flex items-center gap-3 group">
+          <Link href="/portal" className="flex items-center gap-3 group">
             <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-xl group-hover:scale-105 transition-transform">
               <GraduationCap className="h-6 w-6" />
             </div>
@@ -28,10 +28,17 @@ export default async function PortalLayout({ children }: { children: React.React
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
             <Link
-              href="/portal/news"
-              className="px-3 py-1.5 rounded-lg text-primary bg-primary/5 hover:bg-primary/10 transition-colors flex items-center gap-1.5"
+              href="/portal"
+              className="px-3 py-1.5 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 text-xs font-medium"
             >
-              <Newspaper className="h-4 w-4" />
+              <Home className="h-3.5 w-3.5" />
+              {t("portal.nav.home")}
+            </Link>
+            <Link
+              href="/portal/news"
+              className="px-3 py-1.5 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 text-xs font-medium"
+            >
+              <Newspaper className="h-3.5 w-3.5" />
               {t("portal.nav.news")}
             </Link>
             <Link
