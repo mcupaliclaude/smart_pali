@@ -25,6 +25,8 @@ import { listPublicPrograms } from "@/features/curriculum/server";
 import { listPublicCourses } from "@/features/meditation/server";
 import { listSpotlightAlumni } from "@/features/alumni/server";
 
+import { PortalHero } from "../_components/portal-hero";
+
 export default async function PortalHomePage() {
   const [t, locale] = await Promise.all([getT(), getLocale()]);
   const tenantId = await resolvePublicTenantId();
@@ -45,56 +47,11 @@ export default async function PortalHomePage() {
 
   return (
     <div className="space-y-16 sm:space-y-24">
-      {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/15 via-primary/5 to-transparent border border-primary/20 p-8 sm:p-12 lg:p-16">
-        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-primary/10 blur-2xl pointer-events-none" />
-
-        <div className="relative z-10 max-w-3xl space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-primary/15 text-primary border border-primary/25">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>{t("home.hero.badge")}</span>
-          </div>
-
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground leading-[1.15]">
-            {t("home.hero.title")}
-          </h1>
-
-          <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-            {t("home.hero.subtitle")}
-          </p>
-
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            <Link
-              href="/portal/curriculum"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:opacity-90 shadow-xs transition-all"
-            >
-              <BookOpen className="h-4 w-4" />
-              <span>{t("home.hero.btnPrograms")}</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-
-            <Link
-              href="/portal/meditation"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-white dark:bg-slate-900 text-foreground hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-all"
-            >
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span>{t("home.hero.btnMeditation")}</span>
-            </Link>
-
-            <Link
-              href="/portal/news"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Newspaper className="h-4 w-4" />
-              <span>{t("home.news.viewAll")}</span>
-            </Link>
-          </div>
-        </div>
-      </section>
+      {/* 1. HERO SECTION (MotionSites Ambient Aurora Mesh Style) */}
+      <PortalHero />
 
       {/* 2. DIGITAL SERVICES TILES */}
-      <section className="space-y-6">
+      <section id="portal-services" className="space-y-6 scroll-mt-20">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-foreground">
             {t("home.services.title")}
