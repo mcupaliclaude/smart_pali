@@ -2,7 +2,7 @@ import { prisma } from "@/shared/lib/infra/prisma";
 import type { Prisma } from "@/generated/prisma";
 import { errors } from "@/shared/lib/errors";
 import { writeAudit } from "@/shared/lib/audit";
-import type { CreateNewsArticleInput, UpdateNewsArticleInput } from "./validations";
+import type { CreateNewsArticleInput, UpdateNewsArticleInput, TranslateNewsInput } from "./validations";
 
 export interface NewsCategoryDto {
   id: string;
@@ -263,3 +263,85 @@ export async function togglePinNewsArticle(tenantId: string, id: string): Promis
   });
   return updated.isPinned;
 }
+
+export interface TranslatedNewsResult {
+  titleEn: string;
+  excerptEn: string;
+  contentEn: string;
+  slug: string;
+}
+
+export async function translateNewsWithGemini(
+  config: { apiKey: string; model: string },
+  input: TranslateNewsInput
+): Promise<TranslatedNewsResult> {
+  const apiKey = config.apiKey;
+  const model = config.model || "gemini-2.5-flash";
+
+  const prompt = `You are a professional bilingual translator for a prestigious Buddhist university in Thailand (Mahachulalongkornrajavidyalaya University / MCU).
+Translate the provided Thai news information into English with an academic, elegant, and professional tone suitable for public news releases and portal announcements.
+
+Thai Title:
+${input.titleTh}
+
+${input.excerptTh ? `Thai Excerpt:\n${input.excerptTh}\n` : ""}
+${input.contentTh ? `Thai Content:\n${input.contentTh}\n` : ""}
+
+Generate the English version in JSON format with exactly the following fields:
+- "titleEn": Professional, appealing English headline (capitalized appropriately).
+- "excerptEn": Concise English summary / excerpt (1-2 sentences suitable for news cards).
+- "contentEn": Full English news article translation. If no Thai content was provided, write a 2-3 paragraph professional article based on the title and excerpt. Preserve clear paragraph breaks.
+- "slug": URL-friendly slug in lowercase using only English letters, numbers, and hyphens (max 60 chars, no spaces, no special characters).
+
+Return ONLY raw JSON, with no markdown formatting or backticks.`;
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.3,
+        },
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const errJson = await res.json().catch(() => ({}));
+    const errMsg = errJson.error?.message || `HTTP ${res.status}: ${res.statusText}`;
+    throw new Error(`Google Gemini API error: ${errMsg}`);
+  }
+
+  const data = await res.json();
+  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!rawText) {
+    throw new Error("No translation response received from Gemini");
+  }
+
+  let cleaned = rawText.trim();
+  if (cleaned.startsWith("```json")) {
+    cleaned = cleaned.replace(/^```json\s*/, "").replace(/\s*```$/, "");
+  } else if (cleaned.startsWith("```")) {
+    cleaned = cleaned.replace(/^```\s*/, "").replace(/\s*```$/, "");
+  }
+
+  try {
+    const parsed = JSON.parse(cleaned);
+    return {
+      titleEn: String(parsed.titleEn || "").trim(),
+      excerptEn: String(parsed.excerptEn || "").trim(),
+      contentEn: String(parsed.contentEn || "").trim(),
+      slug: String(parsed.slug || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9-]+/g, "-")
+        .replace(/^-+|-+$/g, ""),
+    };
+  } catch {
+    throw new Error("Failed to parse translation response from Gemini");
+  }
+}
+

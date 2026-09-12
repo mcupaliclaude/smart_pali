@@ -26,6 +26,7 @@ export default async function PortalLayout({ children }: { children: React.React
         brandLogoUrl={tenant?.logoUrl}
         brandName={tenant?.nameTh}
         brandTagline={tenant?.nameEn}
+        contact={tenant?.contact}
       />
     </div>
   );

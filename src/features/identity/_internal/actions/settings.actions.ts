@@ -10,8 +10,8 @@ import { getTenantSettings, updateTenantSettings, type TenantSettings } from "..
 
 import { errors } from "@/shared/lib/errors";
 import { saveUploadedLogo, type UploadableFile } from "../services/logo-upload.service";
-import { testSmtpSchema } from "../validations/settings";
-import { getRawTenantSmtp } from "../services/tenant.service";
+import { testSmtpSchema, testGeminiApiSchema } from "../validations/settings";
+import { getRawTenantSmtp, getRawTenantGeminiApiKey } from "../services/tenant.service";
 import { testSmtpTransport } from "@/shared/lib/infra/mailer";
 
 export async function getSettingsAction(): Promise<ActionResult<TenantSettings>> {
@@ -76,5 +76,60 @@ export async function testSmtpAction(input: unknown): Promise<ActionResult<{ suc
     return { success: true };
   });
 }
+
+export async function testGeminiApiAction(input: unknown): Promise<ActionResult<{ success: boolean; message: string }>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(P.settingsManage);
+    const locale = await getLocale();
+    const data = testGeminiApiSchema.parse(input, { error: zodErrorMap(locale) });
+
+    let key = data.apiKey?.trim() || "";
+    if (!key) {
+      key = (await getRawTenantGeminiApiKey(ctx.tenantId)) || "";
+    }
+
+    if (!key) {
+      throw errors.validation("validation", {
+        apiKey: [locale === "th" ? "กรุณาระบุ Gemini API Key ก่อนทดสอบ" : "Gemini API Key is required"],
+      });
+    }
+
+    const model = data.model || "gemini-2.5-flash";
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: "Ping test. Respond with: OK" }] }],
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        const errMsg = errJson.error?.message || `HTTP ${res.status}: ${res.statusText}`;
+        throw errors.validation("validation", {
+          _form: [locale === "th" ? `การเชื่อมต่อล้มเหลว: ${errMsg}` : `Connection failed: ${errMsg}`],
+        });
+      }
+
+      return {
+        success: true,
+        message: locale === "th" ? "เชื่อมต่อ Google Gemini API สำเร็จพร้อมใช้งาน" : "Google Gemini API connected successfully",
+      };
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "validation") {
+        throw err;
+      }
+      const msg = err instanceof Error ? err.message : String(err);
+      throw errors.validation("validation", {
+        _form: [locale === "th" ? `เกิดข้อผิดพลาดในการเชื่อมต่อ: ${msg}` : `Connection error: ${msg}`],
+      });
+    }
+  });
+}
+
 
 

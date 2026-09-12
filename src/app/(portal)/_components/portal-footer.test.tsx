@@ -21,7 +21,9 @@ vi.mock("@/shared/lib/i18n/client", () => ({
       "portal.nav.reservations": "จองห้องและยานพาหนะ",
       "portal.nav.meditation": "วิปัสสนาธุระ",
       "portal.nav.alumni": "ศิษย์เก่า",
+      "portal.nav.contact": "ติดต่อเรา",
       "portal.nav.adminConsole": "ระบบหลังบ้าน",
+      "portal.contact.title": "ติดต่อคณะและสำนักงาน",
       "home.contact.address": "อาคารเรียนรวม คณะพุทธศาสตร์ มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย อ.วังน้อย จ.พระนครศรีอยุธยา",
       "home.contact.hours": "วันจันทร์ - ศุกร์: 08:30 - 16:30 น.",
     };

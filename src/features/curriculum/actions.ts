@@ -4,4 +4,9 @@ export {
   deleteProgramAction,
   addCourseAction,
   deleteCourseAction,
+  createDepartmentAction,
+  updateDepartmentAction,
+  deleteDepartmentAction,
+  syncProgramCoursesAction,
 } from "./_internal/actions";
+

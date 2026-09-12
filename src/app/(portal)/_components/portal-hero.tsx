@@ -11,10 +11,26 @@ import {
 } from "lucide-react";
 import { useT } from "@/shared/lib/i18n/client";
 
-export function PortalHero() {
+export interface PortalHeroProps {
+  brandName?: string | null;
+  brandTagline?: string | null;
+  badge?: string | null;
+  subtitle?: string | null;
+}
+
+export function PortalHero({
+  brandName,
+  brandTagline: _brandTagline,
+  badge,
+  subtitle,
+}: PortalHeroProps = {}) {
   const t = useT();
   const [mousePos, setMousePos] = React.useState({ x: 0.5, y: 0.5 });
   const [isHovered, setIsHovered] = React.useState(false);
+
+  const displayTitle = brandName || t("home.hero.title");
+  const displayBadge = badge || t("home.hero.badge");
+  const displaySubtitle = subtitle || t("home.hero.subtitle");
 
   const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -92,7 +108,7 @@ export function PortalHero() {
         {/* Top Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/25 dark:border-amber-400/25 text-amber-800 dark:text-amber-200 backdrop-blur-xs shadow-xs mb-6 sm:mb-8 hover:bg-amber-500/15 dark:hover:bg-amber-400/20 hover:scale-105 transition-all cursor-default">
           <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 animate-pulse" />
-          <span>{t("home.hero.badge")}</span>
+          <span>{displayBadge}</span>
         </div>
 
         {/* Editorial High-Impact Heading */}
@@ -105,14 +121,14 @@ export function PortalHero() {
           </span>
         </h1>
 
-        {/* Faculty Title */}
+        {/* Organization / College Title */}
         <div className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white drop-shadow-xs mt-4 sm:mt-5 text-left">
-          {t("home.hero.title")}
+          {displayTitle}
         </div>
 
         {/* Mission Statement Description */}
         <p className="max-w-xl text-sm sm:text-base md:text-lg text-slate-600 dark:text-slate-300 leading-relaxed mt-3 sm:mt-4 text-left font-normal">
-          {t("home.hero.subtitle")}
+          {displaySubtitle}
         </p>
 
         {/* CTA Pill Buttons */}

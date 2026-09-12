@@ -14,20 +14,24 @@ import {
   LogIn,
   MapPin,
   Clock,
-  Globe,
+  Phone,
+  Mail,
 } from "lucide-react";
 import { useT } from "@/shared/lib/i18n/client";
+import type { TenantContact } from "@/features/identity";
 
 export interface PortalFooterProps {
   brandLogoUrl?: string | null;
   brandName?: string | null;
   brandTagline?: string | null;
+  contact?: TenantContact | null;
 }
 
 export function PortalFooter({
   brandLogoUrl,
   brandName,
   brandTagline,
+  contact,
 }: PortalFooterProps) {
   const t = useT();
   const currentYear = new Date().getFullYear();
@@ -119,6 +123,15 @@ export function PortalFooter({
                   <span>{t("portal.nav.staff")}</span>
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/portal/contact"
+                  className="text-[var(--text-2)] hover:text-[var(--brand-ink)] hover:translate-x-0.5 transition-all inline-flex items-center gap-2"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+                  <span>{t("portal.nav.contact")}</span>
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -175,15 +188,49 @@ export function PortalFooter({
             <div className="space-y-3 text-xs text-[var(--text-2)]">
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                <span className="leading-relaxed">{t("home.contact.address")}</span>
+                <span className="leading-relaxed">
+                  {contact?.mapUrl ? (
+                    <a
+                      href={contact.mapUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-primary transition-colors hover:underline"
+                    >
+                      {contact.addressTh || contact.addressEn || t("home.contact.address")}
+                    </a>
+                  ) : (
+                    contact?.addressTh || contact?.addressEn || t("home.contact.address")
+                  )}
+                </span>
               </div>
+              {contact?.phone && (
+                <div className="flex items-center gap-2.5">
+                  <Phone className="w-4 h-4 text-primary shrink-0" />
+                  <a href={`tel:${contact.phone}`} className="hover:text-primary transition-colors">
+                    {contact.phone}
+                  </a>
+                </div>
+              )}
+              {contact?.email && (
+                <div className="flex items-center gap-2.5">
+                  <Mail className="w-4 h-4 text-primary shrink-0" />
+                  <a href={`mailto:${contact.email}`} className="hover:text-primary transition-colors truncate">
+                    {contact.email}
+                  </a>
+                </div>
+              )}
               <div className="flex items-center gap-2.5">
                 <Clock className="w-4 h-4 text-primary shrink-0" />
-                <span>{t("home.contact.hours")}</span>
+                <span>{contact?.hoursTh || contact?.hoursEn || t("home.contact.hours")}</span>
               </div>
-              <div className="flex items-center gap-2.5 pt-1">
-                <Globe className="w-4 h-4 text-primary shrink-0" />
-                <span className="font-medium text-[var(--text)]">MCU Pali Studies</span>
+              <div className="pt-1.5">
+                <Link
+                  href="/portal/contact"
+                  className="inline-flex items-center gap-1 font-semibold text-primary hover:underline text-[11px]"
+                >
+                  <span>{t("portal.contact.title")}</span>
+                  <span>&rarr;</span>
+                </Link>
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 
 export const newsStatusEnum = z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]);
 
@@ -24,3 +24,12 @@ export const updateNewsArticleSchema = createNewsArticleSchema.extend({
 
 export type CreateNewsArticleInput = z.infer<typeof createNewsArticleSchema>;
 export type UpdateNewsArticleInput = z.infer<typeof updateNewsArticleSchema>;
+
+export const translateNewsSchema = z.object({
+  titleTh: z.string().trim().min(1, "titleTh is required"),
+  excerptTh: z.string().trim().optional().nullable(),
+  contentTh: z.string().trim().optional().nullable(),
+});
+
+export type TranslateNewsInput = z.infer<typeof translateNewsSchema>;
+

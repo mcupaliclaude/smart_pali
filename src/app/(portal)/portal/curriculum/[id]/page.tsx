@@ -11,6 +11,7 @@ import {
   FileText,
   ExternalLink,
   GraduationCap,
+  UserCheck,
 } from "lucide-react";
 import { getLocale } from "@/shared/lib/i18n/server";
 import { getProgramById, type CurriculumCourseDto } from "@/features/curriculum/server";
@@ -109,7 +110,7 @@ export default async function ProgramDetailPage({ params }: ProgramDetailPagePro
         </div>
 
         {/* Stats Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4 border-t border-border/50">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-border/50">
           <div className="space-y-1">
             <span className="text-xs text-muted-foreground flex items-center gap-1">
               <Award className="h-3.5 w-3.5" />
@@ -129,6 +130,18 @@ export default async function ProgramDetailPage({ params }: ProgramDetailPagePro
               {program.durationYears} {locale === "en" ? "Years" : "ปี"}
             </p>
           </div>
+
+          {(program.coordinatorNameTh || program.coordinatorNameEn) && (
+            <div className="space-y-1">
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <UserCheck className="h-3.5 w-3.5" />
+                {locale === "en" ? "Coordinator" : "อาจารย์ผู้รับผิดชอบ"}
+              </span>
+              <p className="text-xs font-semibold text-foreground leading-snug">
+                {locale === "en" ? program.coordinatorNameEn || program.coordinatorNameTh : program.coordinatorNameTh}
+              </p>
+            </div>
+          )}
 
           <div className="space-y-1 col-span-2 sm:col-span-1">
             <span className="text-xs text-muted-foreground flex items-center gap-1">

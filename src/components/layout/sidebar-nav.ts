@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, Settings, Layers, Newspaper, UserCheck, BookOpen, FileCheck, CalendarClock, Sparkles, GraduationCap, type LucideIcon } from "lucide-react";
+import { LayoutDashboard, Users, Settings, Newspaper, UserCheck, BookOpen, FileCheck, CalendarClock, Sparkles, GraduationCap, Globe, type LucideIcon } from "lucide-react";
 import { hasPermission, P } from "@/features/identity";
 import { SAMPLE_P } from "@/features/sample";
 import { NEWS_P } from "@/features/news";
@@ -17,55 +17,75 @@ export interface NavItem {
   /** ต้องมีสิทธิ์นี้ถึงเห็น — ไม่มี = ทุกคนที่ login เห็น */
   permission?: string;
   children?: NavItem[];
+  external?: boolean;
 }
 export interface NavGroup { label: string; items: NavItem[] }
 export interface NavCrumb { title: string; href: string }
 
 export const sidebarGroups: NavGroup[] = [
-  { label: "nav.group.overview", items: [{ title: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard }] },
   {
-    label: "nav.group.news",
-    items: [{ title: "news.nav", href: "/news", icon: Newspaper, permission: NEWS_P.newsRead }],
+    label: "nav.group.overview",
+    items: [
+      { title: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
+    ],
   },
   {
-    label: "nav.group.staff",
-    items: [{ title: "staff.nav", href: "/staff", icon: UserCheck, permission: STAFF_P.staffRead }],
+    label: "nav.group.academic",
+    items: [
+      {
+        title: "curriculum.title",
+        href: "/curriculum",
+        icon: BookOpen,
+        permission: CURRICULUM_P.curriculumRead,
+        children: [
+          { title: "curriculum.programs", href: "/curriculum", permission: CURRICULUM_P.curriculumRead },
+          { title: "curriculum.departments", href: "/curriculum/departments", permission: CURRICULUM_P.curriculumRead },
+        ],
+      },
+      { title: "staff.nav", href: "/staff", icon: UserCheck, permission: STAFF_P.staffRead },
+      { title: "alumni.title", href: "/alumni", icon: GraduationCap, permission: ALUMNI_P.alumniRead },
+    ],
   },
   {
-    label: "nav.group.curriculum",
-    items: [{ title: "curriculum.title", href: "/curriculum", icon: BookOpen, permission: CURRICULUM_P.curriculumRead }],
+    label: "nav.group.services",
+    items: [
+      { title: "news.nav", href: "/news", icon: Newspaper, permission: NEWS_P.newsRead },
+      { title: "edocs.title", href: "/edocs", icon: FileCheck, permission: EDOCS_P.edocsRead },
+      { title: "reservations.title", href: "/reservations", icon: CalendarClock, permission: RESERVATIONS_P.reservationsRead },
+      { title: "meditation.title", href: "/meditation", icon: Sparkles, permission: MEDITATION_P.meditationRead },
+    ],
   },
   {
-    label: "nav.group.edocs",
-    items: [{ title: "edocs.title", href: "/edocs", icon: FileCheck, permission: EDOCS_P.edocsRead }],
+    label: "nav.group.system",
+    items: [
+      {
+        title: "nav.users",
+        href: "/users",
+        icon: Users,
+        permission: P.usersRead,
+        children: [
+          { title: "nav.users", href: "/users", permission: P.usersRead },
+          { title: "nav.roles", href: "/users/roles", permission: P.rolesManage },
+        ],
+      },
+      {
+        title: "nav.settings",
+        href: "/settings",
+        icon: Settings,
+        children: [
+          { title: "settings.nav.org", href: "/settings", permission: P.settingsManage },
+          { title: "settings.nav.email", href: "/settings/email", permission: P.settingsManage },
+          { title: "sample.nav", href: "/sample", permission: SAMPLE_P.sampleRead },
+        ],
+      },
+      {
+        title: "nav.viewPortal",
+        href: "/portal",
+        icon: Globe,
+        external: true,
+      },
+    ],
   },
-  {
-    label: "nav.group.reservations",
-    items: [{ title: "reservations.title", href: "/reservations", icon: CalendarClock, permission: RESERVATIONS_P.reservationsRead }],
-  },
-  {
-    label: "nav.group.meditation",
-    items: [{ title: "meditation.title", href: "/meditation", icon: Sparkles, permission: MEDITATION_P.meditationRead }],
-  },
-  {
-    label: "nav.group.alumni",
-    items: [{ title: "alumni.title", href: "/alumni", icon: GraduationCap, permission: ALUMNI_P.alumniRead }],
-  },
-  {
-    label: "nav.group.sample",
-    items: [{ title: "sample.nav", href: "/sample", icon: Layers, permission: SAMPLE_P.sampleRead }],
-  },
-  {
-    label: "nav.group.users",
-    items: [{
-      title: "nav.users", href: "/users", icon: Users, permission: P.usersRead,
-      children: [
-        { title: "nav.users", href: "/users", permission: P.usersRead },
-        { title: "nav.roles", href: "/users/roles", permission: P.rolesManage },
-      ],
-    }],
-  },
-  { label: "nav.group.settings", items: [{ title: "nav.settings", href: "/settings", icon: Settings, permission: P.settingsManage }] },
 ];
 
 type Ctx = Parameters<typeof hasPermission>[0];

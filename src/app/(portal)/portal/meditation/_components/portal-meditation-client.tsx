@@ -134,7 +134,7 @@ export function PortalMeditationClient({
   return (
     <div className="min-h-screen bg-neutral-50/50 pb-20">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-amber-950 via-stone-900 to-stone-950 text-white pt-16 pb-20 px-4 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden bg-gradient-to-b from-amber-950 via-stone-900 to-stone-950 text-white pt-14 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]" />
         <div className="max-w-6xl mx-auto relative z-10 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-400/20 text-amber-300 text-xs font-medium mb-6">
@@ -195,21 +195,21 @@ export function PortalMeditationClient({
       </section>
 
       {/* Main Content Area */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 -mt-8">
         {/* Filters Bar */}
-        <div className="bg-white rounded-2xl shadow-sm border border-neutral-200/80 p-4 sm:p-5 mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-              <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider whitespace-nowrap">
-                {locale === "th" ? "รูปแบบ:" : "Format:"}
+        <div className="bg-white dark:bg-card rounded-2xl shadow-md border border-neutral-200/90 dark:border-border p-4 sm:p-5 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold text-neutral-500 dark:text-muted-foreground uppercase tracking-wider mr-1">
+                {locale === "th" ? "รูปแบบการปฏิบัติ:" : "Format:"}
               </span>
               <button
                 type="button"
                 onClick={() => setFormatFilter("ALL")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   formatFilter === "ALL"
-                    ? "bg-amber-600 text-white shadow-sm"
-                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                    ? "bg-amber-600 text-white shadow-xs font-semibold"
+                    : "bg-neutral-100 dark:bg-muted text-neutral-600 dark:text-muted-foreground hover:bg-neutral-200 dark:hover:bg-muted/80"
                 }`}
               >
                 {locale === "th" ? "ทั้งหมด" : "All"}
@@ -217,10 +217,10 @@ export function PortalMeditationClient({
               <button
                 type="button"
                 onClick={() => setFormatFilter("RESIDENTIAL")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   formatFilter === "RESIDENTIAL"
-                    ? "bg-amber-600 text-white shadow-sm"
-                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                    ? "bg-amber-600 text-white shadow-xs font-semibold"
+                    : "bg-neutral-100 dark:bg-muted text-neutral-600 dark:text-muted-foreground hover:bg-neutral-200 dark:hover:bg-muted/80"
                 }`}
               >
                 {locale === "th" ? "พักค้างคืน (Residential)" : "Residential"}
@@ -228,31 +228,37 @@ export function PortalMeditationClient({
               <button
                 type="button"
                 onClick={() => setFormatFilter("ONE_DAY")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   formatFilter === "ONE_DAY"
-                    ? "bg-amber-600 text-white shadow-sm"
-                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                    ? "bg-amber-600 text-white shadow-xs font-semibold"
+                    : "bg-neutral-100 dark:bg-muted text-neutral-600 dark:text-muted-foreground hover:bg-neutral-200 dark:hover:bg-muted/80"
                 }`}
               >
                 {locale === "th" ? "วันเดียว (One-Day)" : "One-Day"}
               </button>
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-              <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider whitespace-nowrap">
-                {locale === "th" ? "ระดับ:" : "Level:"}
-              </span>
-              <select
-                value={levelFilter}
-                onChange={(e) => setLevelFilter(e.target.value)}
-                aria-label={locale === "th" ? "เลือกระดับการอบรม" : "Select training level"}
-                className="text-xs rounded-lg border-neutral-300 bg-neutral-50 px-3 py-1.5 text-neutral-700 focus:border-amber-500 focus:ring-amber-500"
-              >
-                <option value="ALL">{locale === "th" ? "ทุกระดับความรู้" : "All Levels"}</option>
-                <option value="BEGINNER">{t("meditation.level.beginner")}</option>
-                <option value="INTERMEDIATE">{t("meditation.level.intermediate")}</option>
-                <option value="ADVANCED">{t("meditation.level.advanced")}</option>
-              </select>
+            <div className="flex items-center gap-3 self-end md:self-auto">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-neutral-500 dark:text-muted-foreground uppercase tracking-wider">
+                  {locale === "th" ? "ระดับ:" : "Level:"}
+                </span>
+                <select
+                  value={levelFilter}
+                  onChange={(e) => setLevelFilter(e.target.value)}
+                  aria-label={locale === "th" ? "เลือกระดับการอบรม" : "Select training level"}
+                  className="text-xs rounded-lg border border-neutral-300 dark:border-border bg-neutral-50 dark:bg-muted px-3 py-1.5 text-neutral-700 dark:text-foreground focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                >
+                  <option value="ALL">{locale === "th" ? "ทุกระดับความรู้" : "All Levels"}</option>
+                  <option value="BEGINNER">{t("meditation.level.beginner")}</option>
+                  <option value="INTERMEDIATE">{t("meditation.level.intermediate")}</option>
+                  <option value="ADVANCED">{t("meditation.level.advanced")}</option>
+                </select>
+              </div>
+
+              <div className="text-xs font-medium text-neutral-400 dark:text-muted-foreground border-l border-neutral-200 dark:border-border pl-3">
+                {locale === "th" ? `พบ ${filteredCourses.length} หลักสูตร` : `${filteredCourses.length} courses`}
+              </div>
             </div>
           </div>
         </div>

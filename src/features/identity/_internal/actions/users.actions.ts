@@ -8,6 +8,7 @@ import { P } from "../../permissions";
 import { requirePermission } from "../rbac";
 import { listUsersQuerySchema, createUserSchema, updateUserSchema, setUserActiveSchema, issuePasswordLinkSchema, requestEmailChangeSchema } from "../validations/users";
 import * as svc from "../services/user.service";
+import * as csvSvc from "../services/user-csv.service";
 
 const em = async () => ({ error: zodErrorMap(await getLocale()) });
 
@@ -72,3 +73,39 @@ export async function requestEmailChangeAction(input: unknown): Promise<ActionRe
 export async function confirmEmailChangeAction(token: string): Promise<ActionResult<boolean>> {
   return runAction(() => svc.confirmEmailChange(token));
 }
+
+export async function exportUsersCsvAction(filter?: {
+  search?: string;
+  status?: "all" | "active" | "inactive";
+  roleId?: string;
+}): Promise<ActionResult<{ filename: string; content: string; total: number }>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(P.usersRead);
+    return csvSvc.exportUsersToCsv(ctx.tenantId, filter);
+  });
+}
+
+export async function getUserImportTemplateAction(): Promise<ActionResult<{ filename: string; content: string }>> {
+  return runAction(async () => {
+    await requirePermission(P.usersManage);
+    return csvSvc.getUserImportTemplateCsv();
+  });
+}
+
+export async function validateUsersImportAction(csvText: string): Promise<ActionResult<csvSvc.UserImportValidationResult>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(P.usersManage);
+    return csvSvc.validateUserImport(actorOf(ctx), csvText);
+  });
+}
+
+export async function executeUsersImportAction(input: {
+  rows: csvSvc.ValidatedUserRow[];
+  sendEmail?: boolean;
+}): Promise<ActionResult<csvSvc.UserImportExecutionResult>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(P.usersManage);
+    return csvSvc.executeUserImport(actorOf(ctx), input.rows, { sendEmail: input.sendEmail });
+  });
+}
+

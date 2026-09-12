@@ -169,7 +169,7 @@ export function CourseDetailClient({ course, locale }: CourseDetailClientProps) 
       </div>
 
       {/* Main Grid: Details + Sticky Registration Card */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 -mt-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left 2 Cols: Comprehensive Retreat Information */}
           <div className="lg:col-span-2 space-y-8">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useMemo } from "react";
-import { Plus, Edit2, Trash2, Pin, PinOff, Newspaper, AlertCircle, Eye, Star } from "lucide-react";
+import { Plus, Edit2, Trash2, Pin, PinOff, Newspaper, AlertCircle, Eye, Star, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useLocale } from "@/shared/lib/i18n/client";
 import { formatDate } from "@/shared/lib/format";
@@ -18,6 +18,7 @@ import {
   LiyonField,
   LiyonSelect,
   LiyonSwitch,
+  TinyEditor,
 } from "@/shared/components/liyon";
 import type { NewsArticleDto, NewsCategoryDto } from "@/features/news";
 import {
@@ -25,6 +26,7 @@ import {
   updateNewsAction,
   deleteNewsAction,
   togglePinNewsAction,
+  translateNewsWithGeminiAction,
 } from "@/features/news/actions";
 
 interface NewsClientProps {
@@ -107,6 +109,7 @@ export function NewsClient({
     setFormContentEn("");
     setFormIsPinned(false);
     setFormIsFeatured(false);
+    setContentTab("th");
     setModalOpen(true);
   }
 
@@ -124,7 +127,44 @@ export function NewsClient({
     setFormContentEn(item.contentEn);
     setFormIsPinned(item.isPinned);
     setFormIsFeatured(item.isFeatured);
+    setContentTab("th");
     setModalOpen(true);
+  }
+
+  const [contentTab, setContentTab] = useState<"th" | "en">("th");
+  const [isTranslating, setIsTranslating] = useState(false);
+
+  async function handleTranslateWithGemini() {
+    if (!formTitleTh.trim()) {
+      toast.error(t("news.aiRequireThai"));
+      return;
+    }
+
+    setIsTranslating(true);
+    try {
+      const res = await translateNewsWithGeminiAction({
+        titleTh: formTitleTh,
+        excerptTh: formExcerptTh.trim() || undefined,
+        contentTh: formContentTh.trim() || undefined,
+      });
+
+      if (res.ok) {
+        toast.success(t("news.aiSuccess"));
+        if (res.data.titleEn) setFormTitleEn(res.data.titleEn);
+        if (res.data.excerptEn) setFormExcerptEn(res.data.excerptEn);
+        if (res.data.contentEn) setFormContentEn(res.data.contentEn);
+        if (res.data.slug && (!formSlug || formSlug === "" || formSlug === formTitleTh.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""))) {
+          setFormSlug(res.data.slug);
+        }
+      } else {
+        const msg = res.error?.fieldErrors?._form?.[0] || res.error?.message || t("common.error");
+        toast.error(msg);
+      }
+    } catch {
+      toast.error(t("common.error"));
+    } finally {
+      setIsTranslating(false);
+    }
   }
 
   function handleSave() {
@@ -407,6 +447,42 @@ export function NewsClient({
         />
         <LiyonDialogBody>
           <div className="space-y-4 py-2">
+            {/* AI Bilingual Assistant Banner */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-lg bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-purple-50/90 border border-blue-200/80 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-purple-950/40 dark:border-blue-800/60 shadow-xs">
+              <div className="flex items-start gap-2.5">
+                <div className="p-1.5 rounded-md bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 shrink-0 mt-0.5">
+                  <Sparkles className="w-4 h-4 animate-pulse" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-semibold text-blue-950 dark:text-blue-200 flex items-center gap-1.5">
+                    {t("news.aiHelperTitle")}
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                    {t("news.aiHelperDesc")}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleTranslateWithGemini}
+                disabled={isTranslating || !formTitleTh.trim()}
+                className="btn pri sm gap-1.5 text-xs shrink-0 self-end sm:self-center shadow-xs bg-indigo-600 hover:bg-indigo-700 text-white"
+                title={!formTitleTh.trim() ? t("news.aiRequireThai") : t("news.aiTranslate")}
+              >
+                {isTranslating ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>{t("news.aiTranslating")}</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>{t("news.aiTranslate")}</span>
+                  </>
+                )}
+              </button>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <LiyonField label={t("news.titleTh")}>
                 <input
@@ -497,23 +573,62 @@ export function NewsClient({
               </LiyonField>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <LiyonField label={t("news.contentTh")}>
-                <textarea
-                  className="inp min-h-[140px]"
-                  value={formContentTh}
-                  onChange={(e) => setFormContentTh(e.target.value)}
-                  placeholder="เนื้อหาข่าวภาษาไทยฉบับสมบูรณ์..."
-                />
-              </LiyonField>
-              <LiyonField label={t("news.contentEn")}>
-                <textarea
-                  className="inp min-h-[140px]"
-                  value={formContentEn}
-                  onChange={(e) => setFormContentEn(e.target.value)}
-                  placeholder="Full english content..."
-                />
-              </LiyonField>
+            {/* News Content with TinyEditor */}
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center justify-between border-b border-border pb-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {t("news.content")}
+                  </span>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 font-medium">
+                    Tiny Editor
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setContentTab("th")}
+                    className={`px-3 py-1 rounded-md transition-all ${
+                      contentTab === "th"
+                        ? "bg-background text-foreground font-semibold shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    เนื้อหาภาษาไทย *
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setContentTab("en")}
+                    className={`px-3 py-1 rounded-md transition-all ${
+                      contentTab === "en"
+                        ? "bg-background text-foreground font-semibold shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    English Content *
+                  </button>
+                </div>
+              </div>
+
+              {contentTab === "th" ? (
+                <LiyonField label={t("news.contentTh")}>
+                  <TinyEditor
+                    value={formContentTh}
+                    onChange={setFormContentTh}
+                    placeholder="พิมพ์เนื้อหาข่าวภาษาไทยฉบับสมบูรณ์ (สามารถจัดหัวข้อ ตัวหนา ตัวเอียง รายการ ลิงก์ ฯลฯ)..."
+                    minHeight="200px"
+                  />
+                </LiyonField>
+              ) : (
+                <LiyonField label={t("news.contentEn")}>
+                  <TinyEditor
+                    value={formContentEn}
+                    onChange={setFormContentEn}
+                    placeholder="Full English news content (headings, bold, italic, lists, links, blockquote)..."
+                    minHeight="200px"
+                  />
+                </LiyonField>
+              )}
             </div>
 
             <div className="flex items-center gap-6 pt-2">

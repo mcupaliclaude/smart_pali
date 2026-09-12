@@ -24,6 +24,7 @@ import { listPublishedNews } from "@/features/news/server";
 import { listPublicPrograms } from "@/features/curriculum/server";
 import { listPublicCourses } from "@/features/meditation/server";
 import { listSpotlightAlumni } from "@/features/alumni/server";
+import { getTenantSettings } from "@/features/identity/server";
 
 import { PortalHero } from "../_components/portal-hero";
 
@@ -32,11 +33,12 @@ export default async function PortalHomePage() {
   const tenantId = await resolvePublicTenantId();
 
   // Parallel server fetch of featured data across modules
-  const [newsList, programs, meditationCourses, spotlightAlumni] = await Promise.all([
+  const [newsList, programs, meditationCourses, spotlightAlumni, tenantSettings] = await Promise.all([
     listPublishedNews(tenantId, { limit: 3 }).catch(() => []),
     listPublicPrograms(tenantId).catch(() => []),
     listPublicCourses(tenantId).catch(() => []),
     listSpotlightAlumni(tenantId).catch(() => []),
+    tenantId ? getTenantSettings(tenantId).catch(() => null) : null,
   ]);
 
   // Take top 3 programs and top 2 upcoming courses
@@ -48,7 +50,16 @@ export default async function PortalHomePage() {
   return (
     <div className="space-y-16 sm:space-y-24">
       {/* 1. HERO SECTION (MotionSites Ambient Aurora Mesh Style) */}
-      <PortalHero />
+      <PortalHero
+        brandName={locale === "en" && tenantSettings?.nameEn ? tenantSettings.nameEn : (tenantSettings?.nameTh || t("home.hero.title"))}
+        brandTagline={locale === "en" && tenantSettings?.nameEn ? "Mahachulalongkornrajavidyalaya University" : "มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย"}
+        badge={locale === "en" ? "Mahachulalongkornrajavidyalaya University" : "มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย"}
+        subtitle={
+          locale === "en"
+            ? "Preserving ancient Pali scriptures, integrating modern Buddhist studies, and cultivating mindfulness for global peace."
+            : "สืบสานคัมภีร์พระไตรปิฎกบาลีโบราณ บูรณาการพุทธศาสตร์สมัยใหม่ พัฒนาจิตตภาวนาเพื่อสันติสุขของมวลมนุษยชาติ"
+        }
+      />
 
       {/* 2. DIGITAL SERVICES TILES */}
       <section id="portal-services" className="space-y-6 scroll-mt-20">
@@ -495,25 +506,64 @@ export default async function PortalHomePage() {
           </div>
 
           <h3 className="text-2xl font-bold text-foreground">
-            {locale === "en" ? "Visit Our Faculty & Retreat Center" : "สำนักงานคณบดีและศูนย์วิปัสสนาธุระ"}
+            {tenantSettings?.nameTh || (locale === "en" ? "Visit Our College & Retreat Center" : "วิทยาลัยสงฆ์บาฬีศึกษาพุทธโฆส นครปฐม")}
           </h3>
 
           <div className="space-y-2 text-sm text-muted-foreground">
             <div className="flex items-start gap-3">
               <MapPin className="h-4 w-4 text-primary mt-1 shrink-0" />
-              <span>{t("home.contact.address")}</span>
+              {tenantSettings?.contact?.mapUrl ? (
+                <a
+                  href={tenantSettings.contact.mapUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-primary transition-colors hover:underline"
+                >
+                  {locale === "en" && tenantSettings.contact.addressEn
+                    ? tenantSettings.contact.addressEn
+                    : tenantSettings?.contact?.addressTh || t("home.contact.address")}
+                </a>
+              ) : (
+                <span>
+                  {locale === "en" && tenantSettings?.contact?.addressEn
+                    ? tenantSettings.contact.addressEn
+                    : tenantSettings?.contact?.addressTh || t("home.contact.address")}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <Clock className="h-4 w-4 text-primary shrink-0" />
-              <span>{t("home.contact.hours")}</span>
+              <span>
+                {locale === "en" && tenantSettings?.contact?.hoursEn
+                  ? tenantSettings.contact.hoursEn
+                  : tenantSettings?.contact?.hoursTh || t("home.contact.hours")}
+              </span>
             </div>
             <div className="flex items-center gap-3">
               <Phone className="h-4 w-4 text-primary shrink-0" />
-              <span>035-248-000 ต่อ 8100-8105</span>
+              {tenantSettings?.contact?.phone ? (
+                <a
+                  href={`tel:${tenantSettings.contact.phone}`}
+                  className="hover:text-primary transition-colors"
+                >
+                  {tenantSettings.contact.phone}
+                </a>
+              ) : (
+                <span>035-248-000 ต่อ 8100-8105</span>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <Mail className="h-4 w-4 text-primary shrink-0" />
-              <span>buddhism@mcu.ac.th</span>
+              {tenantSettings?.contact?.email ? (
+                <a
+                  href={`mailto:${tenantSettings.contact.email}`}
+                  className="hover:text-primary transition-colors truncate"
+                >
+                  {tenantSettings.contact.email}
+                </a>
+              ) : (
+                <span>contact.pali@mcu.ac.th</span>
+              )}
             </div>
           </div>
         </div>
@@ -526,7 +576,7 @@ export default async function PortalHomePage() {
           <p className="text-xs text-muted-foreground leading-relaxed">
             {locale === "en"
               ? "For admissions, retreat reservations, and general inquiries, you can reach out via online portal or visit in person during office hours."
-              : "สำหรับผู้สนใจสมัครเข้าศึกษาต่อ การจองห้องปฏิบัติธรรม หรือติดต่อราชการ สามารถติดต่อผ่านระบบออนไลน์หรือเดินทางมา ณ สำนักงานคณะในวันและเวลาราชการ"}
+              : "สำหรับผู้สนใจสมัครเข้าศึกษาต่อ การจองห้องปฏิบัติธรรม หรือติดต่อราชการ สามารถติดต่อผ่านระบบออนไลน์หรือเดินทางมา ณ วิทยาลัยสงฆ์บาฬีศึกษาพุทธโฆส นครปฐม ในวันและเวลาราชการ"}
           </p>
           <div className="pt-2 flex flex-wrap gap-2">
             <Link
@@ -542,6 +592,13 @@ export default async function PortalHomePage() {
             >
               <Sparkles className="h-3.5 w-3.5 text-primary" />
               <span>{t("portal.nav.meditation")}</span>
+            </Link>
+            <Link
+              href="/portal/contact"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-xs"
+            >
+              <Phone className="h-3.5 w-3.5" />
+              <span>{locale === "en" ? "Full Contact & Maps" : "ข้อมูลติดต่อและแผนที่ทั้งหมด"}</span>
             </Link>
           </div>
         </div>

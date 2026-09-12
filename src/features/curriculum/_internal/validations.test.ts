@@ -3,6 +3,8 @@ import {
   createCurriculumProgramSchema,
   updateCurriculumProgramSchema,
   createCurriculumCourseSchema,
+  createDepartmentSchema,
+  updateDepartmentSchema,
 } from "./validations";
 
 describe("Curriculum Validations", () => {
@@ -68,5 +70,53 @@ describe("Curriculum Validations", () => {
       expect(result.data.labHours).toBe(0);
       expect(result.data.selfStudyHours).toBe(6);
     }
+  });
+
+  describe("Department Validations", () => {
+    const validDept = {
+      code: "buddhist_studies",
+      nameTh: "ภาควิชาพระพุทธศาสนา",
+      nameEn: "Department of Buddhist Studies",
+      seq: 1,
+      isActive: true,
+    };
+
+    it("validates valid department input", () => {
+      const result = createDepartmentSchema.safeParse(validDept);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.code).toBe("buddhist_studies");
+        expect(result.data.nameTh).toBe("ภาควิชาพระพุทธศาสนา");
+        expect(result.data.isActive).toBe(true);
+      }
+    });
+
+    it("fails when department code contains invalid characters or is too short", () => {
+      const shortResult = createDepartmentSchema.safeParse({
+        ...validDept,
+        code: "a",
+      });
+      expect(shortResult.success).toBe(false);
+
+      const invalidCharResult = createDepartmentSchema.safeParse({
+        ...validDept,
+        code: "dept with spaces!",
+      });
+      expect(invalidCharResult.success).toBe(false);
+    });
+
+    it("validates update department schema requires valid UUID", () => {
+      const invalidUuid = updateDepartmentSchema.safeParse({
+        ...validDept,
+        id: "invalid-id",
+      });
+      expect(invalidUuid.success).toBe(false);
+
+      const validUuid = updateDepartmentSchema.safeParse({
+        ...validDept,
+        id: "a1b2c3d4-e5f6-4a1b-8c2d-3e4f5a6b7c8d",
+      });
+      expect(validUuid.success).toBe(true);
+    });
   });
 });

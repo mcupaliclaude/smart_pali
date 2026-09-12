@@ -15,6 +15,7 @@ export const MESSAGES: Dictionary = {
   "news.coverImage": { th: "ลิงก์รูปภาพหน้าปก", en: "Cover Image URL" },
   "news.excerptTh": { th: "เนื้อหาย่อ (ภาษาไทย)", en: "Excerpt (Thai)" },
   "news.excerptEn": { th: "เนื้อหาย่อ (English)", en: "Excerpt (English)" },
+  "news.content": { th: "เนื้อหาข่าว", en: "News Content" },
   "news.contentTh": { th: "เนื้อหาข่าว (ภาษาไทย)", en: "Content (Thai)" },
   "news.contentEn": { th: "เนื้อหาข่าว (English)", en: "Content (English)" },
   "news.isPinned": { th: "ปักหมุดข่าวเด่น", en: "Pin as Highlight" },
@@ -46,4 +47,13 @@ export const MESSAGES: Dictionary = {
   "perm.news:create": { th: "สร้างและร่างข่าวประชาสัมพันธ์", en: "Create news articles" },
   "perm.news:manage": { th: "แก้ไขและจัดการข่าวประชาสัมพันธ์", en: "Manage news articles" },
   "perm.news:publish": { th: "อนุมัติเผยแพร่และปักหมุดข่าว", en: "Publish and pin news articles" },
+  // AI Translation
+  "news.aiTranslate": { th: "แปลอังกฤษด้วย Gemini", en: "Translate with Gemini" },
+  "news.aiTranslating": { th: "กำลังแปลด้วย Gemini...", en: "Translating with Gemini..." },
+  "news.aiSuccess": { th: "แปลภาษาอังกฤษด้วย Gemini สำเร็จแล้ว", en: "Translated to English with Gemini successfully" },
+  "news.aiMissingKey": { th: "ยังไม่ได้ตั้งค่า Gemini API Key กรุณาไปที่เมนูตั้งค่าระบบเพื่อระบุคีย์", en: "Gemini API Key is not configured. Please set it in System Settings" },
+  "news.aiRequireThai": { th: "กรุณากรอกหัวข้อข่าวภาษาไทยก่อนใช้ AI ช่วยแปล", en: "Please enter Thai headline before translating with AI" },
+  "news.aiHelperTitle": { th: "ผู้ช่วยแปลข่าว 2 ภาษาด้วย AI (Gemini)", en: "AI Bilingual News Assistant (Gemini)" },
+  "news.aiHelperDesc": { th: "กรอกข้อมูลภาษาไทย แล้วคลิกเพื่อให้ Gemini ช่วยแปลหัวข้อ ข่าวย่อ และเนื้อหาภาษาอังกฤษอัตโนมัติ", en: "Enter Thai info and click to let Gemini generate English title, excerpt, and content" },
 };
+

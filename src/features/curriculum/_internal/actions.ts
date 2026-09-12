@@ -10,6 +10,8 @@ import {
   createCurriculumProgramSchema,
   updateCurriculumProgramSchema,
   createCurriculumCourseSchema,
+  createDepartmentSchema,
+  updateDepartmentSchema,
 } from "./validations";
 import {
   createProgram,
@@ -17,9 +19,16 @@ import {
   deleteProgram,
   addCourse,
   deleteCourse,
+  createDepartment,
+  updateDepartment,
+  deleteDepartment,
+  syncProgramCourses,
+  type ImportCourseItem,
   type CurriculumProgramDto,
   type CurriculumCourseDto,
+  type DepartmentWithCountsDto,
 } from "./services";
+
 
 export async function createProgramAction(
   input: unknown
@@ -83,3 +92,63 @@ export async function deleteCourseAction(id: string): Promise<ActionResult<void>
     revalidatePath("/portal/curriculum");
   });
 }
+
+export async function syncProgramCoursesAction(input: {
+  programId: string;
+  courses: ImportCourseItem[];
+}): Promise<ActionResult<CurriculumCourseDto[]>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(CURRICULUM_P.curriculumManage);
+    const result = await syncProgramCourses(ctx.tenantId, input.programId, input.courses);
+    revalidatePath("/curriculum");
+    revalidatePath("/portal/curriculum");
+    return result;
+  });
+}
+
+
+export async function createDepartmentAction(
+  input: unknown
+): Promise<ActionResult<DepartmentWithCountsDto>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(CURRICULUM_P.curriculumManage);
+    const parsed = createDepartmentSchema.parse(input, {
+      error: zodErrorMap(await getLocale()),
+    });
+    const result = await createDepartment(ctx.tenantId, parsed, ctx.userId);
+    revalidatePath("/curriculum");
+    revalidatePath("/curriculum/departments");
+    revalidatePath("/portal/curriculum");
+    revalidatePath("/staff");
+    return result;
+  });
+}
+
+export async function updateDepartmentAction(
+  input: unknown
+): Promise<ActionResult<DepartmentWithCountsDto>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(CURRICULUM_P.curriculumManage);
+    const parsed = updateDepartmentSchema.parse(input, {
+      error: zodErrorMap(await getLocale()),
+    });
+    const result = await updateDepartment(ctx.tenantId, parsed, ctx.userId);
+    revalidatePath("/curriculum");
+    revalidatePath("/curriculum/departments");
+    revalidatePath("/portal/curriculum");
+    revalidatePath("/staff");
+    return result;
+  });
+}
+
+export async function deleteDepartmentAction(id: string): Promise<ActionResult<void>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(CURRICULUM_P.curriculumManage);
+    await deleteDepartment(ctx.tenantId, id, ctx.userId);
+    revalidatePath("/curriculum");
+    revalidatePath("/curriculum/departments");
+    revalidatePath("/portal/curriculum");
+    revalidatePath("/staff");
+  });
+}
+

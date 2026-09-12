@@ -22,7 +22,17 @@ describe("sidebar-nav", () => {
   it("getActiveNavChain เลือก href ที่ตรงที่สุด", () => {
     expect(getActiveNavChain("/users/roles").map((c) => c.href)).toEqual(["/users", "/users/roles"]);
     expect(getActiveNavChain("/settings").map((c) => c.href)).toEqual(["/settings"]);
+    expect(getActiveNavChain("/settings/email").map((c) => c.href)).toEqual(["/settings", "/settings/email"]);
+    expect(getActiveNavChain("/sample").map((c) => c.href)).toEqual(["/settings", "/sample"]);
     expect(getActiveNavChain("/nowhere")).toEqual([]);
   });
-  it("โครงเมนูมี 11 กลุ่ม", () => expect(sidebarGroups).toHaveLength(11));
+  it("โครงเมนูมี 4 กลุ่มหลัก", () => {
+    expect(sidebarGroups).toHaveLength(4);
+    expect(sidebarGroups.map((g) => g.label)).toEqual([
+      "nav.group.overview",
+      "nav.group.academic",
+      "nav.group.services",
+      "nav.group.system",
+    ]);
+  });
 });

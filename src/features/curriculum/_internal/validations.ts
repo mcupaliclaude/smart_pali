@@ -46,6 +46,26 @@ export const createCurriculumCourseSchema = z.object({
   seq: z.coerce.number().int().default(1),
 });
 
+export const createDepartmentSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .min(2, "code must be at least 2 characters")
+    .max(50, "code must be at most 50 characters")
+    .regex(/^[a-zA-Z0-9_-]+$/, "code must contain only alphanumeric characters, underscores, or hyphens"),
+  nameTh: z.string().trim().min(2, "nameTh is required").max(100),
+  nameEn: z.string().trim().min(2, "nameEn is required").max(100),
+  seq: z.coerce.number().int().min(0).default(1),
+  isActive: z.boolean().default(true),
+});
+
+export const updateDepartmentSchema = createDepartmentSchema.extend({
+  id: z.string().uuid("Invalid department ID"),
+});
+
 export type CreateCurriculumProgramInput = z.infer<typeof createCurriculumProgramSchema>;
 export type UpdateCurriculumProgramInput = z.infer<typeof updateCurriculumProgramSchema>;
 export type CreateCurriculumCourseInput = z.infer<typeof createCurriculumCourseSchema>;
+export type CreateDepartmentInput = z.infer<typeof createDepartmentSchema>;
+export type UpdateDepartmentInput = z.infer<typeof updateDepartmentSchema>;
+

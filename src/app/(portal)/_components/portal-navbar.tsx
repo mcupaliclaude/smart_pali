@@ -22,6 +22,7 @@ import {
   LayoutDashboard,
   User,
   Settings,
+  PhoneCall,
 } from "lucide-react";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { useT } from "@/shared/lib/i18n/client";
@@ -70,6 +71,7 @@ export function PortalNavbar({
     { href: "/portal/reservations", label: t("portal.nav.reservations"), icon: Calendar },
     { href: "/portal/meditation", label: t("portal.nav.meditation"), icon: Sparkles },
     { href: "/portal/alumni", label: t("portal.nav.alumni"), icon: Award },
+    { href: "/portal/contact", label: t("portal.nav.contact"), icon: PhoneCall },
   ];
 
   const isActive = (href: string) => {

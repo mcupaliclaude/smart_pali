@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { cn } from "@/shared/lib/utils";
 import { useAppSession } from "@/hooks/use-session";
 import { useT } from "@/shared/lib/i18n/client";
-import { visibleGroups, type NavItem } from "./sidebar-nav";
+import { visibleGroups, getActiveNavChain, type NavItem } from "./sidebar-nav";
 import { useSidebarStore } from "./sidebar-store";
 
 /* ============================================================
@@ -34,11 +34,11 @@ export function AdminSidebarNav() {
   const { collapsed, setCollapsed, openGroup, setOpenGroup } = useSidebarStore();
   const { roles, permissions, isSuperAdmin } = useAppSession();
   const groups = visibleGroups({ roles, permissions, isSuperAdmin });
+  const activeChain = getActiveNavChain(pathname);
+  const activeHref = activeChain[activeChain.length - 1]?.href;
 
-  // Auto-open the group containing the active route — only if no group is
-  // currently open (มาจาก sidebar.tsx เดิมทุกตัวอักษร)
+  // Auto-open the group containing the active route
   useEffect(() => {
-    if (openGroup) return;
     for (const group of groups) {
       for (const item of group.items) {
         if (
@@ -51,14 +51,11 @@ export function AdminSidebarNav() {
         }
       }
     }
-    // หน้าปัจจุบันไม่ตรงกับกลุ่มไหนเลย (เช่นเพิ่ง login มาที่ /dashboard) — เปิดกลุ่มแรกที่มีลูกไว้ก่อน
-    // ผู้ใช้ที่เพิ่งเข้าระบบต้องเห็นเมนูย่อยที่ตนมีสิทธิ์ทันที ไม่ต้องกดขยายเอง (สำคัญกับผู้ใช้สิทธิ์น้อยที่กลุ่มมีลูกแค่รายการเดียว)
+    if (openGroup) return;
     for (const group of groups) {
       const withChildren = group.items.find((item) => item.children);
       if (withChildren) { setOpenGroup(withChildren.href); return; }
     }
-    // ตั้งใจให้ deps มีแค่ pathname: เอฟเฟกต์นี้ต้องทำงานเมื่อ "ย้ายหน้า" เท่านั้น การใส่ groups/openGroup
-    // (ซึ่งคำนวณใหม่ทุก render) จะทำให้มันรันซ้ำแล้วเปิดกลุ่มที่ผู้ใช้เพิ่งกดปิดกลับมาเองทันที
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
@@ -75,6 +72,11 @@ export function AdminSidebarNav() {
     <>
       {groups.map((group, groupIdx) => (
         <div className="grp" key={group.label || `group-${groupIdx}`}>
+          {group.label && !collapsed && (
+            <div className="px-2.5 pt-2 pb-0.5 text-[11px] font-bold tracking-wider text-[var(--text-muted)] uppercase select-none opacity-80">
+              {t(group.label)}
+            </div>
+          )}
           {group.items.map((item) =>
             item.children ? (
               <NavGroup
@@ -84,9 +86,10 @@ export function AdminSidebarNav() {
                 onToggle={() => handleGroupToggle(item.href)}
                 pathname={pathname}
                 t={t}
+                activeHref={activeHref}
               />
             ) : (
-              <NavLeaf key={item.href} item={item} pathname={pathname} t={t} />
+              <NavLeaf key={item.href} item={item} pathname={pathname} t={t} activeHref={activeHref} />
             ),
           )}
         </div>
@@ -100,14 +103,18 @@ function NavLeaf({
   pathname,
   t,
   nested = false,
+  activeHref,
 }: {
   item: NavItem;
   pathname: string;
   t: (key: string) => string;
   nested?: boolean;
+  activeHref?: string;
 }) {
   const Icon = item.icon;
-  const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+  const isActive = activeHref
+    ? item.href === activeHref
+    : pathname === item.href || pathname.startsWith(item.href + "/");
 
   return (
     <Link
@@ -118,6 +125,22 @@ function NavLeaf({
     >
       {!nested && Icon && <Icon aria-hidden="true" />}
       <span className="t">{t(item.title)}</span>
+      {item.external && (
+        <svg
+          className="chev opacity-60 w-3.5 h-3.5 shrink-0"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+          <polyline points="15 3 21 3 21 9" />
+          <line x1="10" y1="14" x2="21" y2="3" />
+        </svg>
+      )}
     </Link>
   );
 }
@@ -128,17 +151,19 @@ function NavGroup({
   onToggle,
   pathname,
   t,
+  activeHref,
 }: {
   item: NavItem;
   isOpen: boolean;
   onToggle: () => void;
   pathname: string;
   t: (key: string) => string;
+  activeHref?: string;
 }) {
   const Icon = item.icon;
   const children = item.children ?? [];
   const isActive = children.some(
-    (child) => pathname === child.href || pathname.startsWith(child.href + "/"),
+    (child) => child.href === activeHref || pathname === child.href || pathname.startsWith(child.href + "/"),
   );
 
   return (
@@ -153,7 +178,7 @@ function NavGroup({
       <div className="sub">
         <div className="hd">{t(item.title)}</div>
         {children.map((child) => (
-          <NavLeaf key={child.href} item={child} pathname={pathname} t={t} nested />
+          <NavLeaf key={child.href} item={child} pathname={pathname} t={t} nested activeHref={activeHref} />
         ))}
       </div>
     </div>

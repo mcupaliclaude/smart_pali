@@ -178,18 +178,18 @@ export function PortalAlumniClient({
       </section>
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 -mt-8">
         {/* Navigation Tabs Bar */}
-        <div className="bg-white rounded-2xl shadow-sm border border-neutral-200/80 p-3 sm:p-4 mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-2 overflow-x-auto">
+        <div className="bg-white dark:bg-card rounded-2xl shadow-md border border-neutral-200/90 dark:border-border p-4 sm:p-5 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => setActiveTab("directory")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
                   activeTab === "directory"
                     ? "bg-blue-600 text-white shadow-sm"
-                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted/80"
                 }`}
               >
                 <BookOpen className="w-3.5 h-3.5" />
@@ -199,10 +199,10 @@ export function PortalAlumniClient({
               <button
                 type="button"
                 onClick={() => setActiveTab("spotlight")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
                   activeTab === "spotlight"
                     ? "bg-blue-600 text-white shadow-sm"
-                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted/80"
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
@@ -212,10 +212,10 @@ export function PortalAlumniClient({
               <button
                 type="button"
                 onClick={() => setActiveTab("giving")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-colors whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
                   activeTab === "giving"
                     ? "bg-blue-600 text-white shadow-sm"
-                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-muted dark:text-muted-foreground dark:hover:bg-muted/80"
                 }`}
               >
                 <Heart className="w-3.5 h-3.5 text-rose-500" />
@@ -225,14 +225,14 @@ export function PortalAlumniClient({
 
             {/* Quick search input (only for directory tab) */}
             {activeTab === "directory" && (
-              <div className="relative w-full sm:w-72">
+              <div className="relative w-full md:w-80">
                 <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-neutral-400" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder={t("alumni.searchPlaceholder")}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-neutral-300 bg-neutral-50 focus:bg-white focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-neutral-300 dark:border-border bg-neutral-50 dark:bg-muted/50 text-neutral-900 dark:text-foreground placeholder:text-neutral-400 focus:bg-white dark:focus:bg-card focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none"
                 />
               </div>
             )}
@@ -240,41 +240,47 @@ export function PortalAlumniClient({
 
           {/* Directory Filter Sub-bar */}
           {activeTab === "directory" && (
-            <div className="flex flex-wrap items-center gap-3 pt-3 mt-3 border-t border-neutral-100 text-xs text-neutral-600">
-              <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-neutral-500">{locale === "th" ? "ระดับ:" : "Degree:"}</span>
-                <select
-                  value={degreeFilter}
-                  onChange={(e) => setDegreeFilter(e.target.value)}
-                  aria-label={locale === "th" ? "เลือกระดับปริญญา" : "Select degree level"}
-                  className="text-xs rounded-lg border-neutral-300 bg-neutral-50 px-2.5 py-1 text-neutral-700"
-                >
-                  <option value="ALL">{locale === "th" ? "ทุกระดับปริญญา" : "All Degrees"}</option>
-                  <option value="BACHELOR">{t("alumni.degree.bachelor")}</option>
-                  <option value="MASTER">{t("alumni.degree.master")}</option>
-                  <option value="DOCTORAL">{t("alumni.degree.doctoral")}</option>
-                  <option value="DIPLOMA">{t("alumni.degree.diploma")}</option>
-                </select>
-              </div>
-
-              {uniqueYears.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3.5 mt-3.5 border-t border-neutral-100 dark:border-border text-xs text-neutral-600 dark:text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-neutral-500">{locale === "th" ? "ปีที่จบ:" : "Year (B.E.):"}</span>
+                  <span className="font-semibold text-neutral-500 dark:text-muted-foreground">{locale === "th" ? "ระดับ:" : "Degree:"}</span>
                   <select
-                    value={yearFilter}
-                    onChange={(e) => setYearFilter(e.target.value)}
-                    aria-label={locale === "th" ? "เลือกปีที่สำเร็จการศึกษา" : "Select graduation year"}
-                    className="text-xs rounded-lg border-neutral-300 bg-neutral-50 px-2.5 py-1 text-neutral-700"
+                    value={degreeFilter}
+                    onChange={(e) => setDegreeFilter(e.target.value)}
+                    aria-label={locale === "th" ? "เลือกระดับปริญญา" : "Select degree level"}
+                    className="text-xs rounded-lg border-neutral-300 dark:border-border bg-neutral-50 dark:bg-muted/50 px-2.5 py-1 text-neutral-700 dark:text-foreground focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="ALL">{locale === "th" ? "ทุกปีการศึกษา" : "All Years"}</option>
-                    {uniqueYears.map((yr) => (
-                      <option key={yr} value={String(yr)}>
-                        พ.ศ. {yr}
-                      </option>
-                    ))}
+                    <option value="ALL">{locale === "th" ? "ทุกระดับปริญญา" : "All Degrees"}</option>
+                    <option value="BACHELOR">{t("alumni.degree.bachelor")}</option>
+                    <option value="MASTER">{t("alumni.degree.master")}</option>
+                    <option value="DOCTORAL">{t("alumni.degree.doctoral")}</option>
+                    <option value="DIPLOMA">{t("alumni.degree.diploma")}</option>
                   </select>
                 </div>
-              )}
+
+                {uniqueYears.length > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-neutral-500 dark:text-muted-foreground">{locale === "th" ? "ปีที่จบ:" : "Year (B.E.):"}</span>
+                    <select
+                      value={yearFilter}
+                      onChange={(e) => setYearFilter(e.target.value)}
+                      aria-label={locale === "th" ? "เลือกปีที่สำเร็จการศึกษา" : "Select graduation year"}
+                      className="text-xs rounded-lg border-neutral-300 dark:border-border bg-neutral-50 dark:bg-muted/50 px-2.5 py-1 text-neutral-700 dark:text-foreground focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="ALL">{locale === "th" ? "ทุกปีการศึกษา" : "All Years"}</option>
+                      {uniqueYears.map((yr) => (
+                        <option key={yr} value={String(yr)}>
+                          พ.ศ. {yr}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div className="text-xs text-neutral-500 dark:text-muted-foreground font-medium">
+                {locale === "th" ? `พบศิษย์เก่า ${filteredMembers.length} ท่าน` : `Showing ${filteredMembers.length} members`}
+              </div>
             </div>
           )}
         </div>

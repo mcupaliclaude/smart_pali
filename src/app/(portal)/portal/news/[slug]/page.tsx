@@ -1,4 +1,4 @@
-﻿import { notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Calendar, Eye, Share2 } from "lucide-react";
 import { getLocale } from "@/shared/lib/i18n/server";
@@ -82,9 +82,16 @@ export default async function NewsDetailPage({ params }: NewsDetailPageProps) {
       )}
 
       {/* Main Body Content */}
-      <article className="prose prose-slate dark:prose-invert max-w-none text-base leading-relaxed whitespace-pre-line py-4 border-b border-border">
-        {content}
-      </article>
+      {/<[a-z][\s\S]*>/i.test(content) ? (
+        <article
+          className="prose prose-slate dark:prose-invert max-w-none text-base leading-relaxed py-4 border-b border-border [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:mt-4 [&_h3]:mb-2 [&_p]:my-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_blockquote]:border-l-4 [&_blockquote]:border-primary/50 [&_blockquote]:pl-4 [&_blockquote]:italic [&_a]:text-primary [&_a]:underline"
+          dangerouslySetInnerHTML={{ __html: content }}
+        />
+      ) : (
+        <article className="prose prose-slate dark:prose-invert max-w-none text-base leading-relaxed whitespace-pre-line py-4 border-b border-border">
+          {content}
+        </article>
+      )}
 
       {/* Footer Actions */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
